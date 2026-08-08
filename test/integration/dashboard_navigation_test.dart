@@ -36,7 +36,7 @@ void main() {
     await tester.tap(button);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('weekly league podium'), findsOneWidget);
+    expect(find.text('My League'), findsOneWidget);
     // The bottom nav should agree Rank is now the active tab.
     expect(
       find.descendant(

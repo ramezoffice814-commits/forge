@@ -1,0 +1,82 @@
+import '../../domain/entities/league_definition.dart';
+import '../../domain/enums/league_tier.dart';
+
+/// The six-tier league catalog — every rule (promotion/demotion counts,
+/// placement thresholds, group size) lives here, never as if/else branches
+/// on tier elsewhere (spec section 5).
+abstract final class LeagueCatalog {
+  static final List<LeagueDefinition> leagues = [
+    const LeagueDefinition(
+      id: 'league-ember',
+      name: 'Ember',
+      tier: LeagueTier.ember,
+      minPlacementRating: 0,
+      maxGroupSize: 25,
+      promotionCount: 5,
+      demotionCount: 0,
+      protectedPlacementDays: 7,
+      visualTier: 0,
+      active: true,
+    ),
+    const LeagueDefinition(
+      id: 'league-iron',
+      name: 'Iron',
+      tier: LeagueTier.iron,
+      minPlacementRating: 400,
+      maxGroupSize: 25,
+      promotionCount: 5,
+      demotionCount: 5,
+      protectedPlacementDays: 7,
+      visualTier: 1,
+      active: true,
+    ),
+    const LeagueDefinition(
+      id: 'league-steel',
+      name: 'Steel',
+      tier: LeagueTier.steel,
+      minPlacementRating: 900,
+      maxGroupSize: 25,
+      promotionCount: 5,
+      demotionCount: 5,
+      protectedPlacementDays: 7,
+      visualTier: 2,
+      active: true,
+    ),
+    const LeagueDefinition(
+      id: 'league-titanium',
+      name: 'Titanium',
+      tier: LeagueTier.titanium,
+      minPlacementRating: 1600,
+      maxGroupSize: 25,
+      promotionCount: 5,
+      demotionCount: 5,
+      protectedPlacementDays: 7,
+      visualTier: 3,
+      active: true,
+    ),
+    const LeagueDefinition(
+      id: 'league-obsidian',
+      name: 'Obsidian',
+      tier: LeagueTier.obsidian,
+      minPlacementRating: 2500,
+      maxGroupSize: 25,
+      promotionCount: 5,
+      demotionCount: 5,
+      protectedPlacementDays: 7,
+      visualTier: 4,
+      active: true,
+    ),
+    const LeagueDefinition(
+      id: 'league-mythic',
+      name: 'Mythic',
+      tier: LeagueTier.mythic,
+      minPlacementRating: 3600,
+      maxGroupSize: 25,
+      promotionCount: 0,
+      demotionCount: 5,
+      protectedPlacementDays: 7,
+      visualTier: 5,
+      active: true,
+    ),
+  ];
+}

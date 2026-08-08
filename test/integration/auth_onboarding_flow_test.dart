@@ -194,7 +194,7 @@ void main() {
       await tester.tap(find.widgetWithText(ForgeButton, 'Sign In'));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('weekly league podium'), findsOneWidget);
+      expect(find.text('My League'), findsOneWidget);
     },
   );
 

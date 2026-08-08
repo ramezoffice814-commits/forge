@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge/app.dart';
 import 'package:forge/shared/widgets/forge_bottom_navigation_bar.dart';
-import 'package:forge/shared/widgets/forge_button.dart';
 
 import '../../support/fake_auth_overrides.dart';
 
@@ -10,11 +9,6 @@ void main() {
   Finder navTab(String label) => find.descendant(
     of: find.byType(ForgeBottomNavigationBar),
     matching: find.text(label),
-  );
-
-  Finder tapCounterButton() => find.widgetWithText(
-    ForgeButton,
-    'Tap (verifies tab state survives switching)',
   );
 
   Future<void> pumpAuthenticatedApp(WidgetTester tester) async {
@@ -35,7 +29,7 @@ void main() {
 
     await tester.tap(navTab('Rank'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('weekly league podium'), findsOneWidget);
+    expect(find.text('My League'), findsOneWidget);
 
     await tester.tap(navTab('Progress'));
     await tester.pumpAndSettle();
@@ -59,24 +53,25 @@ void main() {
   ) async {
     await pumpAuthenticatedApp(tester);
 
-    // Home now has real (stateless) dashboard content, so this checks
-    // state preservation on a still-placeholder tab (Rank) instead — the
-    // mechanism under test is StatefulShellRoute.indexedStack itself, not
-    // anything Home-specific.
+    // Every tab now has real content, so this exercises
+    // StatefulShellRoute.indexedStack's preservation mechanism through the
+    // Rank tab's own local widget state instead: its TabBar's selected
+    // sub-tab (My League/Season/Hall of Fame) should survive switching away
+    // to another bottom-nav tab and back, rather than resetting to the
+    // first sub-tab every time Rank remounts.
     await tester.tap(navTab('Rank'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tapped 0 times'), findsOneWidget);
-
-    await tester.tap(tapCounterButton());
-    await tester.pump();
-    expect(find.text('Tapped 1 times'), findsOneWidget);
+    expect(find.text('My League'), findsOneWidget);
+    await tester.tap(find.text('Season'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Season 1'), findsOneWidget);
 
     await tester.tap(navTab('Home'));
     await tester.pumpAndSettle();
     await tester.tap(navTab('Rank'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Tapped 1 times'), findsOneWidget);
+    expect(find.textContaining('Season 1'), findsOneWidget);
   });
 }

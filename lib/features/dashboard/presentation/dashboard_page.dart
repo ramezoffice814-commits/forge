@@ -10,6 +10,8 @@ import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_offline_state.dart';
 import '../../../shared/widgets/forge_retry_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
+import '../../competition/presentation/providers/competition_completion_bridge.dart';
+import '../../competition/presentation/widgets/dashboard_competition_snapshot.dart';
 import '../../progression/presentation/providers/mission_completion_bridge.dart';
 import '../domain/entities/dashboard_overview.dart';
 import 'dashboard_notifier.dart';
@@ -37,6 +39,7 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     ref.watch(missionCompletionBridgeProvider);
+    ref.watch(competitionCompletionBridgeProvider);
     final state = ref.watch(dashboardNotifierProvider);
     return ForgeScaffold(body: _DashboardBody(state: state));
   }
@@ -129,6 +132,8 @@ class _DashboardContent extends StatelessWidget {
                   DashboardHeader(overview: overview),
                   SizedBox(height: tokens.spacing.space3),
                   const DashboardProgressionSnapshot(),
+                  SizedBox(height: tokens.spacing.space2),
+                  const DashboardCompetitionSnapshot(),
                   if (isOfflineCache) ...[
                     SizedBox(height: tokens.spacing.space3),
                     _OfflineCacheBanner(lastUpdatedAt: overview.lastUpdatedAt),

@@ -1,20 +1,15 @@
 import 'package:flutter/material.dart';
 
-import '../../../shared/widgets/tab_placeholder_page.dart';
+import '../../competition/presentation/pages/competition_page.dart';
 
-/// Rank tab root. Real content (weekly league podium, ranked list, seasonal
-/// view) lands in a later roadmap item.
+/// Rank tab root — hosts the real Fair Competition experience (My League,
+/// Season, Hall of Fame). Same "thin tab-root wrapper" convention as
+/// `ProgressPage`/`ProgressionPage`.
 class LeaderboardPage extends StatelessWidget {
   const LeaderboardPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const TabPlaceholderPage(
-      title: 'Rank',
-      icon: Icons.emoji_events_outlined,
-      description:
-          'The weekly league podium and ranked list land in a later '
-          'roadmap item.',
-    );
+    return const CompetitionPage();
   }
 }
