@@ -1,3 +1,10 @@
+// Image-comparison golden tests — platform-dependent rendering (see
+// dart_test.yaml and docs/ARCHITECTURE.md's golden-test notes). Excluded
+// from the standard `flutter test --exclude-tags=golden` run and executed
+// on their own via `flutter test --tags=golden`.
+@Tags(['golden'])
+library;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';

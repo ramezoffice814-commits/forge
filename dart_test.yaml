@@ -1,0 +1,23 @@
+# Repository-wide test-tag configuration.
+#
+# `golden` marks image-comparison tests (anything using matchesGoldenFile).
+# These render actual pixels and are sensitive to the host OS's font
+# fallback chain, so they're kept isolated from the rest of the suite:
+#
+#   flutter test --exclude-tags=golden   # everything else (CI: ubuntu-latest)
+#   flutter test --tags=golden           # goldens only (CI: windows-latest,
+#                                         # matching how the committed
+#                                         # baselines were generated)
+#
+# Individual golden test files opt in via a library-level annotation:
+#   @Tags(['golden'])
+#   library;
+# rather than tagging every testWidgets() call — every test in a file under
+# a `golden/` directory is a golden test, so file-level tagging is the
+# correct granularity here. See docs/ARCHITECTURE.md for the full
+# golden-test/font-determinism writeup.
+tags:
+  golden:
+    description: >-
+      Image-comparison (matchesGoldenFile) tests. Platform-rendering
+      dependent — run in isolation on the OS the baselines were generated on.

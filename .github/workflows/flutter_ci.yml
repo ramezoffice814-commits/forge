@@ -2,6 +2,13 @@ name: Flutter CI
 
 # Validation only — no secrets required, no deployment, no artifact
 # publishing. Everything here runs in the app's default mock mode.
+#
+# Split into two jobs because golden (image-comparison) tests are
+# platform-rendering dependent: the committed baselines were generated on
+# Windows, so golden tests run on windows-latest to match, while every other
+# test (unit/domain/property/widget/integration-style) runs on ubuntu-latest
+# and must not be gated on OS-specific pixel output. See dart_test.yaml and
+# docs/ARCHITECTURE.md for the golden-test/font-determinism notes.
 on:
   pull_request:
     branches: [main, develop]
@@ -13,12 +20,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate:
-    name: Format, analyze, and test
+  functional:
+    name: Format, Analyze, Functional Tests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -35,5 +42,24 @@ jobs:
       - name: Analyze
         run: flutter analyze
 
-      - name: Run tests
-        run: flutter test
+      - name: Run functional tests (excludes golden/screenshot tests)
+        run: flutter test --exclude-tags=golden
+
+  golden:
+    name: Golden Tests
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Run golden tests
+        run: flutter test --tags=golden
