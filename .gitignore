@@ -1,0 +1,87 @@
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# The .vscode folder contains launch configuration and tasks you configure in
+# VS Code which you may wish to be included in version control, so this line
+# is commented out by default.
+#.vscode/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/build/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Environment / secrets — never commit real values. See .env.example.
+.env
+.env.*
+!.env.example
+secrets/
+credentials/
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+
+# Android / iOS signing — real keystores and credentials never belong in
+# source control (android/.gitignore also covers the android/ subtree;
+# these root-level patterns are defense in depth for any future platform
+# folder that isn't Flutter-templated with its own .gitignore).
+key.properties
+*.keystore
+*.jks
+GoogleService-Info.plist
+google-services.json
+
+# AI assistant tooling (Claude Code) — local/session config, not required
+# by every contributor. Revisit if the team decides to share it instead.
+.claude/
+
+# OS junk files
+Thumbs.db
+desktop.ini
+ehthumbs.db
+
+# Local databases / debug artifacts
+*.db
+*.sqlite
+*.sqlite3
+*.hprof
+
+# Golden-test failure output (flutter test writes these next to goldens/
+# only when a golden comparison fails — never the approved images
+# themselves, which live in goldens/ and stay tracked).
+**/failures/
