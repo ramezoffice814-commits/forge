@@ -5,6 +5,7 @@ import '../../../core/theme/forge_tokens.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
+import '../../competition/presentation/widgets/profile_competition_summary.dart';
 import '../../progression/presentation/providers/progression_controller.dart';
 import '../../progression/presentation/providers/progression_state.dart';
 import '../../progression/presentation/widgets/level_badge.dart';
@@ -25,26 +26,36 @@ class ProfilePage extends ConsumerWidget {
       body: switch (state) {
         ProgressionReady ready => Padding(
           padding: EdgeInsets.all(tokens.spacing.space4),
-          child: ForgeCard(
-            elevation: ForgeCardElevation.md,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              LevelBadge(
-                levelNumber: ready.aggregate.profile.currentLevel,
-                levelTitle: ready.aggregate.currentLevelDefinition.title,
-                progressToNextLevel: ready.aggregate.levelProgress,
+              ForgeCard(
+                elevation: ForgeCardElevation.md,
+                children: [
+                  LevelBadge(
+                    levelNumber: ready.aggregate.profile.currentLevel,
+                    levelTitle: ready.aggregate.currentLevelDefinition.title,
+                    progressToNextLevel: ready.aggregate.levelProgress,
+                  ),
+                  SizedBox(height: tokens.spacing.space3),
+                  Text(
+                    ready.aggregate.profile.currentTitle.name,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  SizedBox(height: tokens.spacing.space1),
+                  Text(
+                    '${ready.aggregate.profile.unlockedAchievementIds.length} '
+                    'achievement(s) unlocked',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: tokens.text.withValues(alpha: 0.7),
+                    ),
+                  ),
+                ],
               ),
               SizedBox(height: tokens.spacing.space3),
-              Text(
-                ready.aggregate.profile.currentTitle.name,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              SizedBox(height: tokens.spacing.space1),
-              Text(
-                '${ready.aggregate.profile.unlockedAchievementIds.length} '
-                'achievement(s) unlocked',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: tokens.text.withValues(alpha: 0.7),
-                ),
+              const ForgeCard(
+                elevation: ForgeCardElevation.md,
+                children: [ProfileCompetitionSummary()],
               ),
             ],
           ),
