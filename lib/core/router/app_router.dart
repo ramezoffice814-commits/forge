@@ -13,6 +13,8 @@ import '../../features/missions/presentation/pages/active_mission_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
+import '../../features/social/presentation/pages/public_profile_page.dart';
+import '../../features/social/presentation/pages/social_page.dart';
 import 'app_routes.dart';
 import 'app_shell.dart';
 import 'auth_redirect_policy.dart';
@@ -82,6 +84,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => ActiveMissionPage(
           missionInstanceId: state.pathParameters['missionInstanceId']!,
         ),
+      ),
+      // Same reasoning again — see `SocialPage`/`PublicProfilePage`.
+      GoRoute(
+        path: AppRoutePaths.social,
+        name: AppRouteNames.social,
+        builder: (context, state) => const SocialPage(),
+      ),
+      GoRoute(
+        path: AppRoutePaths.publicProfilePattern,
+        name: AppRouteNames.publicProfile,
+        builder: (context, state) =>
+            PublicProfilePage(userId: state.pathParameters['userId']!),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

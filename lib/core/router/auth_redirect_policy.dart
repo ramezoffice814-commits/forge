@@ -65,7 +65,8 @@ class AuthStateAwareRedirectPolicy implements AuthRedirectPolicy {
     final isPublicAuthRoute = AppRoutePaths.publicAuthRoutes.contains(location);
     final isProtected =
         AppRoutePaths.protected.contains(location) ||
-        location.startsWith(AppRoutePaths.activeMissionPrefix);
+        location.startsWith(AppRoutePaths.activeMissionPrefix) ||
+        location.startsWith(AppRoutePaths.publicProfilePrefix);
     final authenticated = auth.status == AuthStatus.authenticated;
 
     if (authenticated) {
@@ -73,7 +74,8 @@ class AuthStateAwareRedirectPolicy implements AuthRedirectPolicy {
         final redirectTo = state.uri.queryParameters['redirect'];
         if (redirectTo != null &&
             (AppRoutePaths.protected.contains(redirectTo) ||
-                redirectTo.startsWith(AppRoutePaths.activeMissionPrefix))) {
+                redirectTo.startsWith(AppRoutePaths.activeMissionPrefix) ||
+                redirectTo.startsWith(AppRoutePaths.publicProfilePrefix))) {
           return redirectTo;
         }
         return AppRoutePaths.home;

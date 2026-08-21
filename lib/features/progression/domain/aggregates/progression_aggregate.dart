@@ -64,8 +64,16 @@ class ProgressionAggregate {
     final sortedEvents = [...events]
       ..sort((a, b) => a.sequenceNumber.compareTo(b.sequenceNumber));
 
-    var provisionalXp = 0;
-    var confirmedXp = 0; // never set > 0 in this phase — see trust notes.
+    // provisionalByMission accumulates one preview per mission instance
+    // (the latest wins, matching XpPreviewCalculated's own "one preview
+    // per mission" semantics); confirmedXp is the server's authoritative
+    // running total from the most recent XpConfirmedByServer event. A
+    // mission moves out of the provisional bucket the moment its
+    // confirmation event is seen — since confirmedXp already reflects the
+    // server's own record of that mission's reward, leaving its preview
+    // in provisionalByMission too would double-count it.
+    final provisionalByMission = <String, int>{};
+    var confirmedXp = 0;
     final unlockedIds = <String>{};
     DateTime? createdAt;
     var updatedAt = now;
@@ -75,7 +83,14 @@ class ProgressionAggregate {
       updatedAt = event.occurredAt;
       switch (event) {
         case XpPreviewCalculated(:final evaluation):
-          provisionalXp += evaluation.finalXpPreview;
+          provisionalByMission[evaluation.missionInstanceId] =
+              evaluation.finalXpPreview;
+        case XpConfirmedByServer(
+          :final missionInstanceId,
+          :final confirmedTotalXp,
+        ):
+          confirmedXp = confirmedTotalXp;
+          provisionalByMission.remove(missionInstanceId);
         case AchievementUnlocked(:final achievementId):
           unlockedIds.add(achievementId);
         case LevelReached():
@@ -83,6 +98,7 @@ class ProgressionAggregate {
           break; // audit-trail only — level/title are derived fresh below.
       }
     }
+    final provisionalXp = provisionalByMission.values.fold(0, (a, b) => a + b);
 
     final snapshot = MissionHistorySnapshotBuilder.build(
       completions,

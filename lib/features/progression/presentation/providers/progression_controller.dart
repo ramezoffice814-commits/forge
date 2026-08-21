@@ -8,6 +8,7 @@ import '../../data/mock/mock_progression_context.dart';
 import '../../domain/entities/achievement_progress.dart';
 import '../../domain/entities/completed_mission_summary.dart';
 import '../../domain/entities/xp_reward_evaluation.dart';
+import '../../domain/events/progression_event.dart';
 import '../../domain/usecases/calculate_level_usecase.dart';
 import 'progression_providers.dart';
 import 'progression_state.dart';
@@ -109,6 +110,69 @@ class ProgressionController extends Notifier<ProgressionState> {
       lastXpEvaluation: xpEvaluation,
       lastLevelResult: levelResult,
       recentlyUnlocked: achievementResult.newlyUnlocked,
+    );
+  }
+
+  /// The one place a real `submit-mission` server response is allowed to
+  /// affect progression state (spec section 9 — Phase 10D). Appends
+  /// [XpConfirmedByServer] (never fabricated locally — see that event's
+  /// own doc comment) so the correction is durable across the next
+  /// `_refresh()`, not a transient in-memory overwrite that a later
+  /// rehydration would silently discard. Confirmed achievement ids are
+  /// merged the same way local predictions already are — via
+  /// [AchievementUnlocked] events — which is what makes "prevent
+  /// duplicate unlock presentation" automatic: an id already unlocked
+  /// locally is a harmless repeat in the unlocked-ids set, never
+  /// re-triggers `newlyUnlocked`.
+  Future<void> applyServerConfirmedReward({
+    required String missionInstanceId,
+    required int confirmedTotalXp,
+    required int confirmedLevel,
+    required List<String> confirmedAchievementIds,
+    required DateTime confirmedAt,
+  }) async {
+    final repository = ref.read(progressionRepositoryProvider);
+    final userId = _userId;
+
+    await repository.appendEvent(
+      XpConfirmedByServer(
+        eventId: '$missionInstanceId-xp-confirmed',
+        userId: userId,
+        occurredAt: confirmedAt,
+        sequenceNumber: 0,
+        missionInstanceId: missionInstanceId,
+        confirmedTotalXp: confirmedTotalXp,
+        confirmedLevel: confirmedLevel,
+      ),
+    );
+
+    for (final achievementId in confirmedAchievementIds) {
+      await repository.appendEvent(
+        AchievementUnlocked(
+          eventId: '$missionInstanceId-achievement-$achievementId',
+          userId: userId,
+          occurredAt: confirmedAt,
+          sequenceNumber: 0,
+          achievementId: achievementId,
+        ),
+      );
+    }
+
+    // Preserve any celebration already showing (e.g. from the local
+    // provisional completion that triggered this confirmation moments
+    // earlier) — a bare `_refresh()` would otherwise reset those fields
+    // to their defaults and silently dismiss an unseen celebration.
+    final current = state;
+    await _refresh(
+      lastXpEvaluation: current is ProgressionReady
+          ? current.lastXpEvaluation
+          : null,
+      lastLevelResult: current is ProgressionReady
+          ? current.lastLevelResult
+          : null,
+      recentlyUnlocked: current is ProgressionReady
+          ? current.recentlyUnlocked
+          : const [],
     );
   }
 
