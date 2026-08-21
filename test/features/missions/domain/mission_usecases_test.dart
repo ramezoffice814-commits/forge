@@ -18,6 +18,7 @@ import 'package:forge/features/missions/domain/usecases/start_mission_usecase.da
 import 'package:forge/features/missions/domain/usecases/submit_mission_usecase.dart';
 import 'package:forge/features/missions/domain/usecases/undo_mission_completion_usecase.dart';
 import 'package:forge/features/missions/domain/usecases/update_mission_progress_usecase.dart';
+import 'package:forge/features/missions/domain/sessions/mission_clock.dart';
 
 import '../../../support/mission_lifecycle_test_helpers.dart';
 
@@ -30,8 +31,11 @@ void main() {
   setUp(() => repository = InMemoryMissionEventRepository());
   tearDown(() => repository.dispose());
 
-  Future<MissionAggregate> assign() =>
-      AssignMissionUseCase(repository)(instance: instance, userId: testUserId);
+  Future<MissionAggregate> assign({MissionClock? clock}) =>
+      AssignMissionUseCase(
+        repository,
+        clock: clock ?? const SystemMissionClock(),
+      )(instance: instance, userId: testUserId);
 
   test('the full happy path advances assigned -> accepted -> active -> '
       'submitted -> completed', () async {
@@ -188,7 +192,7 @@ void main() {
 
   test('undoing completion outside the undo window throws', () async {
     final clock = FakeMissionClock();
-    var aggregate = await assign();
+    var aggregate = await assign(clock: clock);
     aggregate = await AcceptMissionUseCase(repository)(
       aggregate: aggregate,
       userId: testUserId,

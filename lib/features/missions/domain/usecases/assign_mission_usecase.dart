@@ -4,14 +4,19 @@ import '../events/mission_event.dart';
 import '../events/mission_event_id_generator.dart';
 import '../events/mission_event_source.dart';
 import '../repositories/mission_event_repository.dart';
+import '../sessions/mission_clock.dart';
 
 /// Ensures exactly one `MissionAssigned` event exists for a freshly-derived
 /// [MissionInstance] — safe to call every time the instance is (re)computed,
 /// since the fixed idempotency key makes a second attempt a harmless no-op.
 class AssignMissionUseCase {
-  const AssignMissionUseCase(this._repository);
+  const AssignMissionUseCase(
+    this._repository, {
+    this._clock = const SystemMissionClock(),
+  });
 
   final MissionEventRepository _repository;
+  final MissionClock _clock;
 
   Future<MissionAggregate> call({
     required MissionInstance instance,
@@ -22,7 +27,7 @@ class AssignMissionUseCase {
       return MissionAggregate.rehydrate(instance, existing);
     }
 
-    final now = DateTime.now().toUtc();
+    final now = _clock.now();
     final draft = MissionAssigned(
       eventId: MissionEventIdGenerator.newEventId(),
       missionInstanceId: instance.instanceId,

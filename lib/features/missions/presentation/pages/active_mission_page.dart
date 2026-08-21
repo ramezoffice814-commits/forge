@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/forge_tokens.dart';
+import '../../../../shared/widgets/authority_status_badge.dart';
 import '../../../../shared/widgets/forge_card.dart';
 import '../../../../shared/widgets/forge_empty_state.dart';
 import '../../../../shared/widgets/forge_loading_state.dart';
 import '../../../../shared/widgets/forge_scaffold.dart';
+import '../../../../shared/widgets/sync_conflict_banner.dart';
 import '../../domain/aggregates/mission_aggregate.dart';
 import '../../domain/aggregates/mission_transition_failure.dart';
 import '../../domain/enums/mission_category.dart';
+import '../providers/mission_backend_sync_bridge.dart';
 import '../providers/mission_lifecycle_controller.dart';
 import '../providers/mission_lifecycle_state.dart';
 import '../widgets/mission_action_bar.dart';
@@ -94,6 +97,9 @@ class _ActiveMissionContent extends ConsumerWidget {
       missionLifecycleControllerProvider(missionInstanceId).notifier,
     );
     final instance = aggregate.instance;
+    final syncState = ref.watch(
+      missionBackendSyncControllerProvider(missionInstanceId),
+    );
 
     return ForgeScaffold(
       appBarTitle: instance.title,
@@ -109,13 +115,40 @@ class _ActiveMissionContent extends ConsumerWidget {
               ),
               SizedBox(height: tokens.spacing.space3),
             ],
+            if (syncState.lastErrorUx != null &&
+                syncState.status == MissionSyncStatus.conflict) ...[
+              SyncConflictBanner(state: syncState.lastErrorUx!),
+              SizedBox(height: tokens.spacing.space3),
+            ],
             ForgeCard(
               children: [
-                Text(
-                  missionCategoryLabel(instance.category),
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelMedium?.copyWith(color: tokens.accent),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      missionCategoryLabel(instance.category),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelMedium?.copyWith(color: tokens.accent),
+                    ),
+                    if (syncState.status != MissionSyncStatus.idle)
+                      AuthorityStatusBadge(
+                        indicator: switch (syncState.status) {
+                          MissionSyncStatus.idle =>
+                            AuthorityIndicator.provisional,
+                          MissionSyncStatus.queued =>
+                            AuthorityIndicator.provisional,
+                          MissionSyncStatus.syncing =>
+                            AuthorityIndicator.pendingSync,
+                          MissionSyncStatus.confirmed =>
+                            AuthorityIndicator.confirmed,
+                          MissionSyncStatus.rejected =>
+                            AuthorityIndicator.conflict,
+                          MissionSyncStatus.conflict =>
+                            AuthorityIndicator.conflict,
+                        },
+                      ),
+                  ],
                 ),
                 Text(
                   instance.description,
