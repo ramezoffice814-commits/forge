@@ -16,8 +16,21 @@
 # a `golden/` directory is a golden test, so file-level tagging is the
 # correct granularity here. See docs/ARCHITECTURE.md for the full
 # golden-test/font-determinism writeup.
+#
+# `live_staging` marks tests that make real HTTP calls against the real
+# `forge-staging` Supabase project — never run by default, since they need
+# real network access and real staging credentials passed via
+# --dart-define (see test/live_staging/staging_live_adapter_test.dart's own
+# header for the exact invocation).
+#
+#   flutter test --tags=live_staging --dart-define=... (see the test file)
 tags:
   golden:
     description: >-
       Image-comparison (matchesGoldenFile) tests. Platform-rendering
       dependent — run in isolation on the OS the baselines were generated on.
+  live_staging:
+    description: >-
+      Real integration tests against the live staging Supabase project.
+      Needs real network access and staging credentials; never run as part
+      of the default suite.

@@ -90,15 +90,21 @@ class MissionBackendSyncState {
 /// is today; this only *additionally* sends the matching command to
 /// [backendClientProvider] and records what the server said.
 ///
-/// Known scope limit (see the Phase 10D final report): a real end-to-end
-/// round trip additionally requires a server-side `mission_instances`
-/// row for this mission to already exist, which nothing in Phase 10A-D
-/// creates yet (mission *assignment* was explicitly out of scope for
-/// Phase 10C and remains so here) — in live mode, these commands are
-/// dispatched correctly but will receive `mission_not_found` until that
-/// gap is closed in a later phase. This class's job is the wiring/
-/// reconciliation itself, which is real and independently correct
-/// regardless of that gap.
+/// Known gap, found and documented during Roadmap Item 13B staging
+/// verification (superseding the old Phase 10D note this replaced): a
+/// real end-to-end round trip needs the `missionInstanceId` these
+/// commands carry to match a real server-side `mission_instances` row.
+/// Phase 11's `forge_assign_daily_mission`/`SupabaseMissionAssignmentClient`
+/// creates that row and returns its authoritative id — but nothing wires
+/// that id into [missionInstanceProvider], which still derives its own
+/// purely-local, deterministic id (`<missionId>-<dateKey>`) regardless of
+/// backend mode. In live mode today, that means every command this class
+/// dispatches carries an id the server has never heard of and receives
+/// `mission_not_found` — not because assignment doesn't exist, but
+/// because nothing yet hands its result to the rest of the app. This
+/// class's job is the wiring/reconciliation *after* a valid instance id
+/// exists, which is real and independently correct regardless of that
+/// gap; closing the gap itself is out of scope for this pass.
 class MissionBackendSyncController
     extends FamilyNotifier<MissionBackendSyncState, String> {
   int _sequence = 0;
