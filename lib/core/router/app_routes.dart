@@ -28,6 +28,15 @@ abstract final class AppRoutePaths {
   static String activeMission(String missionInstanceId) =>
       '$activeMissionPrefix$missionInstanceId';
 
+  // Same "full-screen, pushed on top of the shell" reasoning as
+  // `dailyTransmission`/`activeMissionPattern` — see `SocialPage` and
+  // `PublicProfilePage`.
+  static const social = '/social';
+  static const publicProfilePattern = '/social/profile/:userId';
+  static const publicProfilePrefix = '/social/profile/';
+
+  static String publicProfile(String userId) => '$publicProfilePrefix$userId';
+
   static const protected = [
     home,
     rank,
@@ -35,6 +44,7 @@ abstract final class AppRoutePaths {
     awards,
     profile,
     dailyTransmission,
+    social,
   ];
   static const publicAuthRoutes = [signIn, signUp, forgotPassword];
 }
@@ -55,4 +65,6 @@ abstract final class AppRouteNames {
   static const profile = 'profile';
   static const dailyTransmission = 'daily-transmission';
   static const activeMission = 'active-mission';
+  static const social = 'social';
+  static const publicProfile = 'public-profile';
 }

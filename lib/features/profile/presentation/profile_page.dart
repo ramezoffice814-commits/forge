@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_routes.dart';
 import '../../../core/theme/forge_tokens.dart';
+import '../../../shared/widgets/forge_button.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
@@ -56,6 +59,26 @@ class ProfilePage extends ConsumerWidget {
               const ForgeCard(
                 elevation: ForgeCardElevation.md,
                 children: [ProfileCompetitionSummary()],
+              ),
+              SizedBox(height: tokens.spacing.space3),
+              ForgeCard(
+                elevation: ForgeCardElevation.md,
+                children: [
+                  Text('Social', style: Theme.of(context).textTheme.titleSmall),
+                  SizedBox(height: tokens.spacing.space1),
+                  Text(
+                    'Friends, requests, and activity',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: tokens.text.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  SizedBox(height: tokens.spacing.space2),
+                  ForgeButton(
+                    label: 'Open Social',
+                    variant: ForgeButtonVariant.secondary,
+                    onPressed: () => context.goNamed(AppRouteNames.social),
+                  ),
+                ],
               ),
             ],
           ),
