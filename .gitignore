@@ -81,6 +81,11 @@ ehthumbs.db
 *.sqlite3
 *.hprof
 
+# Node — local-only cache for the Supabase CLI (installed via `npm
+# install --no-save supabase`, see supabase/tests/verify_backend.sh).
+# Never committed; regenerated on demand.
+node_modules/
+
 # Golden-test failure output (flutter test writes these next to goldens/
 # only when a golden comparison fails — never the approved images
 # themselves, which live in goldens/ and stay tracked).
