@@ -154,22 +154,37 @@ CompletedMissionSummary (bridged from a real completed MissionAggregate)
 
 ## Client/server trust boundary
 
-This is the single most important architectural rule in the codebase right
-now:
+This is the single most important architectural rule in the codebase, and
+it did not change when the backend was built — the backend exists
+specifically to enforce it:
 
 - The client is authoritative for **local presentation state only**: UI
   state, provisional progress, the local event log, and the local
   progression preview.
 - The client is **never** authoritative for: confirmed/competitive XP,
-  leaderboard score, seasons, or any reward with real-world value.
+  leaderboard score, seasons, or any reward with real-world value. Those
+  live only in Postgres, written only by SECURITY DEFINER `forge_*`
+  functions the client cannot call directly, behind RLS that denies the
+  client `INSERT`/`UPDATE` on every reward-bearing table.
 - Every provisional value is explicitly typed and named to make this
   obvious at the call site (`XpRewardEvaluation.provisionalOnly`,
   `MissionRewardState`, `UserProgressionProfile.provisionalXp` vs.
-  `totalConfirmedXp` — the latter never leaves `0` anywhere in this
-  codebase today).
-- A future backend is expected to independently re-validate mission
-  completions and progression events before anything becomes real. No
-  backend exists yet.
+  `totalConfirmedXp`). `lib/core/security/` (`AuthoritativeValue`,
+  `DataAuthority`) generalizes this pattern across the backend layer.
+- The backend independently re-validates and re-scores every mission
+  completion, progression event, and competitive score server-side —
+  `ProgressionReconciliation` and `CompetitionReconciliation`
+  (`lib/features/progression/domain/services/`,
+  `lib/features/competition/domain/services/`) fold a confirmed server
+  result into local state by subtracting the confirmed delta out of the
+  provisional bucket, never by letting the client overwrite a confirmed
+  value with a local guess.
+- **Current status: locally runtime verified, not staging- or
+  production-verified.** See
+  [../supabase/tests/README.md](../supabase/tests/README.md) and
+  [../docs/ROADMAP.md](../docs/ROADMAP.md) Item 12 for exactly what that
+  means and Item 13 for what's still required before anything is
+  staging-verified.
 
 ## Mock/live environment model
 
@@ -177,7 +192,31 @@ now:
 (`String.fromEnvironment`), defaulting to `mock`. Mock mode never touches
 a network or a real credential. `live` mode requires `SUPABASE_URL` and
 `SUPABASE_ANON_KEY`; `main.dart` fails loudly at startup if `live` is
-requested without them, rather than silently falling back to mock. Only
-the **auth** feature currently has a real (Supabase-backed) implementation
-behind this switch — missions, character, and progression are mock-only
-with no live path built yet.
+requested without them, rather than silently falling back to mock. Auth,
+mission commands, mission assignment, and the leaderboard now have real
+Supabase-backed implementations behind this switch (`lib/core/backend/`,
+`lib/features/competition/data/supabase/`); character presentation and
+Daily Transmission dialogue remain mock-only by design (see
+[Character system](#character-system--daily-transmission)). `live` mode
+has only been exercised against a local Supabase instance so far — see
+[Client/server trust boundary](#clientserver-trust-boundary).
+
+## Golden tests and font determinism
+
+Golden (pixel-comparison) tests are isolated from the rest of the suite
+via the `golden` tag in `dart_test.yaml`, run with
+`flutter test --tags=golden` separately from
+`flutter test --exclude-tags=golden`. This exists because golden output is
+sensitive to the host's font-fallback chain: the app renders text with
+`google_fonts`' Inter family, but the test sandbox doesn't bundle real
+Inter `.ttf` assets and `GoogleFonts.config.allowRuntimeFetching` is
+deliberately `false` in tests (no network fetch during a test run), so a
+substitute system font renders instead — producing a small
+(observed: 0.04%–0.54%) pixel diff against the committed baseline images
+without any actual UI regression. The reference baselines were generated
+on Windows; running `--tags=golden` on a different OS/font-availability
+combination is expected to show this same class of diff. This is a known
+visual-test infrastructure gap (fixing it means bundling real Inter
+`.ttf` files as test assets, or configuring `google_fonts` to skip
+loading entirely in tests), not an application defect — every non-golden
+test exercises the same widgets' actual behavior and logic.
