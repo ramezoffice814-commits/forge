@@ -7,11 +7,13 @@ import '../../../auth/presentation/auth_state_notifier.dart';
 import '../../../missions/domain/entities/mission_instance.dart';
 import '../../../progression/domain/entities/xp_reward_evaluation.dart';
 import '../../domain/entities/competitive_completion_summary.dart';
+import '../../domain/entities/public_leaderboard_entry.dart';
 import '../../domain/enums/completion_quality.dart';
 import '../../domain/enums/completion_validation_state.dart';
 import '../../domain/enums/competition_integrity_state.dart';
 import '../../domain/enums/reward_authority_state.dart';
 import '../../domain/policies/competition_calendar.dart';
+import '../../domain/services/competition_reconciliation.dart';
 import 'competition_providers.dart';
 import 'competition_state.dart';
 
@@ -130,6 +132,81 @@ class CompetitionController extends Notifier<CompetitionState> {
     );
 
     await _refresh();
+  }
+
+  /// The one place a real `submit-mission` server response is allowed to
+  /// affect competition state (spec section 11 — Phase 10D). Never
+  /// touches [CompetitionReady.current] (which stays entirely local-
+  /// provisional, freshly re-derived by [_refresh]) — only appends to
+  /// the separate, explicitly-confirmed [CompetitionReady
+  /// .confirmedContributions] list. Idempotent per mission instance via
+  /// [CompetitionReconciliation.appendConfirmed].
+  void applyServerConfirmedScore({
+    required String missionInstanceId,
+    required double confirmedScoreDelta,
+    required String integrityStatus,
+    required DateTime confirmedAt,
+  }) {
+    final current = state;
+    if (current is! CompetitionReady) return;
+
+    final updated = CompetitionReconciliation.appendConfirmed(
+      current.confirmedContributions,
+      ConfirmedCompetitionContribution(
+        missionInstanceId: missionInstanceId,
+        confirmedScoreDelta: confirmedScoreDelta,
+        integrityStatus: integrityStatus,
+        confirmedAt: confirmedAt,
+      ),
+    );
+
+    state = CompetitionReady(
+      current: current.current,
+      hallOfFame: current.hallOfFame,
+      seasonProgress: current.seasonProgress,
+      confirmedContributions: updated,
+      confirmedWeeklyStanding: current.confirmedWeeklyStanding,
+      confirmedWeeklyStandingFreshness:
+          current.confirmedWeeklyStandingFreshness,
+    );
+  }
+
+  /// Fetches this user's own row from the confirmed weekly leaderboard
+  /// (spec section 8/9) and folds it into state — a cache-fallback
+  /// failure still updates [CompetitionReady.confirmedWeeklyStanding]
+  /// (with [CompetitionAuthorityStatus.confirmedStale]) rather than
+  /// leaving the UI with nothing to show. Never overwrites
+  /// [CompetitionReady.current] itself, which stays entirely local-
+  /// provisional (see that field's own doc comment).
+  Future<void> refreshConfirmedWeeklyStanding() async {
+    final current = state;
+    if (current is! CompetitionReady) return;
+
+    final userId = _userId;
+    final result = await ref
+        .read(cachedLeaderboardFetcherProvider)
+        .fetchWeekly(
+          seasonId: current.current.season.id,
+          weekNumber: current.current.week.weekNumber,
+          leagueId: current.current.league.id,
+        );
+
+    PublicWeeklyLeaderboardEntry? own;
+    for (final entry in result.entries) {
+      if (entry.userId == userId) {
+        own = entry;
+        break;
+      }
+    }
+
+    state = CompetitionReady(
+      current: current.current,
+      hallOfFame: current.hallOfFame,
+      seasonProgress: current.seasonProgress,
+      confirmedContributions: current.confirmedContributions,
+      confirmedWeeklyStanding: own ?? current.confirmedWeeklyStanding,
+      confirmedWeeklyStandingFreshness: result.freshness,
+    );
   }
 }
 

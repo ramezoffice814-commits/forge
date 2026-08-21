@@ -119,4 +119,84 @@ void main() {
     final aggregate = rehydrate([], completions);
     expect(aggregate.profile.unlockedAchievementIds, contains('first_mission'));
   });
+
+  group('XpConfirmedByServer (Phase 10D)', () {
+    XpConfirmedByServer confirmEvent(
+      String missionInstanceId,
+      int seq,
+      int confirmedTotalXp,
+    ) {
+      return XpConfirmedByServer(
+        eventId: '$missionInstanceId-confirmed',
+        userId: testProgressionUserId,
+        occurredAt: now,
+        sequenceNumber: seq,
+        missionInstanceId: missionInstanceId,
+        confirmedTotalXp: confirmedTotalXp,
+        confirmedLevel: 1,
+      );
+    }
+
+    test(
+      'moves a mission from provisional into confirmed without double-counting',
+      () {
+        final aggregate = rehydrate([
+          xpEvent('mission-1', 1, 12),
+          confirmEvent('mission-1', 2, 12),
+        ], []);
+
+        expect(aggregate.profile.totalConfirmedXp, 12);
+        expect(aggregate.profile.provisionalXp, 0);
+        expect(aggregate.profile.previewTotalXp, 12); // never 24.
+      },
+    );
+
+    test(
+      'a still-unconfirmed mission stays provisional alongside a confirmed one',
+      () {
+        final aggregate = rehydrate([
+          xpEvent('mission-1', 1, 12),
+          confirmEvent('mission-1', 2, 12),
+          xpEvent('mission-2', 3, 8), // not yet confirmed.
+        ], []);
+
+        expect(aggregate.profile.totalConfirmedXp, 12);
+        expect(aggregate.profile.provisionalXp, 8);
+        expect(aggregate.profile.previewTotalXp, 20);
+      },
+    );
+
+    test(
+      'the latest confirmation always wins as the authoritative running total',
+      () {
+        final aggregate = rehydrate([
+          xpEvent('mission-1', 1, 12),
+          confirmEvent('mission-1', 2, 12),
+          xpEvent('mission-2', 3, 8),
+          confirmEvent(
+            'mission-2',
+            4,
+            20,
+          ), // server's running total after mission-2 too.
+        ], []);
+
+        expect(aggregate.profile.totalConfirmedXp, 20);
+        expect(aggregate.profile.provisionalXp, 0);
+        expect(aggregate.profile.previewTotalXp, 20);
+      },
+    );
+
+    test(
+      'confirmed XP is never derived from local provisional calculations',
+      () {
+        // A confirmation for a mission whose local preview never happened at
+        // all (e.g. a queued-offline command that only just got confirmed) —
+        // confirmedXp still applies correctly; there is nothing here for it
+        // to have "come from" locally.
+        final aggregate = rehydrate([confirmEvent('mission-9', 1, 42)], []);
+        expect(aggregate.profile.totalConfirmedXp, 42);
+        expect(aggregate.profile.provisionalXp, 0);
+      },
+    );
+  });
 }

@@ -1,8 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
+import '../../../../core/backend/backend_mode.dart';
+import '../../../../core/backend/backend_providers.dart';
 import '../../../progression/presentation/providers/progression_providers.dart';
+import '../../data/mock/mock_leaderboard_repository.dart';
 import '../../data/repositories/in_memory_competition_repository.dart';
+import '../../data/supabase/supabase_leaderboard_repository.dart';
 import '../../domain/repositories/competition_repository.dart';
+import '../../domain/repositories/leaderboard_repository.dart';
+import '../../domain/services/cached_leaderboard_fetch.dart';
 import '../../domain/usecases/build_league_group_usecase.dart';
 import '../../domain/usecases/calculate_competitive_mission_score_usecase.dart';
 import '../../domain/usecases/calculate_season_score_usecase.dart';
@@ -76,4 +83,24 @@ final getHallOfFameUseCaseProvider = Provider((ref) {
 
 final getSeasonProgressUseCaseProvider = Provider((ref) {
   return GetSeasonProgressUseCase(ref.watch(competitionRepositoryProvider));
+});
+
+/// [MockLeaderboardRepository] in mock mode, the real
+/// [SupabaseLeaderboardRepository] in live mode — mirrors
+/// `rawBackendClientProvider`'s mode switch exactly (spec section 8:
+/// "preserve mock mode").
+final leaderboardRepositoryProvider = Provider<LeaderboardRepository>((ref) {
+  final mode = ref.watch(backendModeProvider);
+  return switch (mode) {
+    BackendMode.mock => const MockLeaderboardRepository(),
+    BackendMode.liveSupabase => SupabaseLeaderboardRepository(
+      supa.Supabase.instance.client,
+    ),
+  };
+});
+
+final cachedLeaderboardFetcherProvider = Provider<CachedLeaderboardFetcher>((
+  ref,
+) {
+  return CachedLeaderboardFetcher(ref.watch(leaderboardRepositoryProvider));
 });
