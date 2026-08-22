@@ -4,6 +4,7 @@ import '../enums/mission_category.dart';
 import '../enums/mission_difficulty_level.dart';
 import '../enums/proof_policy.dart';
 import '../progress/mission_progress_definition.dart';
+import 'mission_definition.dart';
 import 'mission_selection_result.dart';
 
 enum MissionInstanceStatus {
@@ -68,6 +69,46 @@ class MissionInstance {
       ),
       accessibilityAlternativeUsed: result.accessibilityAlternativeUsed,
       recoveryMission: result.recoveryApplied,
+    );
+  }
+
+  /// Builds an instance directly from a catalog [MissionDefinition] and a
+  /// server-supplied identity — used only when a live/staging assignment
+  /// reconciles to a *different* mission than the one locally requested
+  /// (spec section 9, outcome B: the server, not the local engine, is
+  /// authoritative for which mission this actually is). Deliberately
+  /// separate from [fromSelectionResult]: building this from the locally
+  /// -selected [MissionSelectionResult] instead would silently show facts
+  /// for the wrong mission — the one bug this factory exists to prevent.
+  factory MissionInstance.fromDefinition(
+    MissionDefinition definition, {
+    required String instanceId,
+    required DateTime assignedDate,
+    required MissionDifficultyLevel resolvedDifficulty,
+    required int resolvedDuration,
+  }) {
+    return MissionInstance(
+      instanceId: instanceId,
+      definitionId: definition.id,
+      assignedDate: assignedDate,
+      title: definition.title,
+      description: definition.description,
+      category: definition.category,
+      resolvedDifficulty: resolvedDifficulty,
+      resolvedDuration: resolvedDuration,
+      xpHint: definition.baseXpHint,
+      completionConditions: definition.completionConditions,
+      proofPolicy: definition.proofPolicy,
+      selectionReasons: const [
+        'Assigned by the server — this was already your mission for today.',
+      ],
+      engineVersion: 'server-reconciled',
+      progressDefinition: MissionProgressDefinition.fromCatalog(
+        type: definition.progressType,
+        target: definition.progressTarget,
+        resolvedMinutes: resolvedDuration,
+        completionConditions: definition.completionConditions,
+      ),
     );
   }
 

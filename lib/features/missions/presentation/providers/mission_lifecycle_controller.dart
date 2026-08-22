@@ -25,6 +25,7 @@ import 'mission_instance_provider.dart';
 import 'mission_lifecycle_state.dart';
 import 'mission_providers.dart';
 import 'mission_selection_controller.dart';
+import 'resolved_mission_instance_controller.dart';
 
 /// One controller instance per mission id (a `NotifierProvider.family`), so
 /// `ActiveMissionPage` and anything else reading this mission's lifecycle
@@ -40,7 +41,15 @@ class MissionLifecycleController
 
   @override
   MissionLifecycleControllerState build(String missionInstanceId) {
-    final instance = ref.watch(missionInstanceProvider);
+    // resolvedMissionInstanceProvider, not missionInstanceProvider
+    // directly (Roadmap Item 13C): in live/staging mode this controller
+    // is keyed by the *server-confirmed* mission id, which never equals
+    // missionInstanceProvider's own locally-generated id — reading the
+    // local provider here would make the guard below permanently fail
+    // to match and this mission's lifecycle would never resolve past
+    // "not found". In mock mode the two are the same value, so this is a
+    // behavior-preserving swap there.
+    final instance = ref.watch(resolvedMissionInstanceProvider)?.instance;
     _repository = ref.watch(missionEventRepositoryProvider);
     _userId = ref.watch(currentMissionUserIdProvider);
 

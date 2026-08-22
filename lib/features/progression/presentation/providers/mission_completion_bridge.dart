@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../missions/domain/aggregates/mission_aggregate.dart';
 import '../../../missions/domain/aggregates/mission_lifecycle_state.dart'
     as lifecycle;
-import '../../../missions/presentation/providers/mission_instance_provider.dart';
 import '../../../missions/presentation/providers/mission_lifecycle_controller.dart';
 import '../../../missions/presentation/providers/mission_lifecycle_state.dart';
+import '../../../missions/presentation/providers/resolved_mission_instance_controller.dart';
 import '../../domain/entities/completed_mission_summary.dart';
 import 'progression_controller.dart';
 import 'progression_providers.dart';
@@ -20,7 +20,12 @@ import 'progression_providers.dart';
 /// regardless of which screen the user is actually looking at when a
 /// mission completes.
 final missionCompletionBridgeProvider = Provider<void>((ref) {
-  final instance = ref.watch(missionInstanceProvider);
+  // resolvedMissionInstanceProvider, not missionInstanceProvider (Roadmap
+  // Item 13C): missionLifecycleControllerProvider below is keyed by the
+  // server-confirmed id in live mode — watching the local instance here
+  // would listen to a different, never-driven family instance and this
+  // bridge would never see a real completion.
+  final instance = ref.watch(resolvedMissionInstanceProvider)?.instance;
   if (instance == null) return;
 
   void reactIfCompleted(MissionAggregate aggregate) {

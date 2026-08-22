@@ -4,9 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../dashboard/presentation/dashboard_notifier.dart';
 import '../../../dashboard/presentation/dashboard_state.dart';
-import '../../../missions/presentation/providers/mission_instance_provider.dart';
 import '../../../missions/presentation/providers/mission_lifecycle_controller.dart';
-import '../../../missions/presentation/providers/mission_selection_controller.dart';
+import '../../../missions/presentation/providers/resolved_mission_instance_controller.dart';
 import '../../data/services/placeholder_character_animation_controller.dart';
 import '../../data/transmission_repository_provider.dart';
 import '../../data/tts_service_provider.dart';
@@ -284,15 +283,21 @@ class DailyTransmissionController
     // fixed idempotency key on `MissionAccepted` means accepting twice
     // (e.g. also from `ActiveMissionPage`) safely resolves to one event.
     // Awaiting `ready` mirrors `DashboardNotifier._load()`: reading
-    // `missionInstanceProvider` before the selection controller's first
-    // resolution lands would otherwise race and see `null`.
-    await ref.read(missionSelectionControllerProvider.notifier).ready;
+    // `resolvedMissionInstanceProvider` before resolution lands would
+    // otherwise race and see `null`. Using the *resolved* (server-
+    // confirmed, in live mode) instance id here — not a locally-generated
+    // one — is what lets every later accept/start/progress/submit command
+    // this mission's lifecycle drives actually match a real server
+    // `mission_instances` row (Roadmap Item 13C).
+    await ref.read(resolvedMissionInstanceControllerProvider.notifier).ready;
     if (_stale(generation)) return;
-    final instance = ref.read(missionInstanceProvider);
-    if (instance != null) {
+    final resolved = ref.read(resolvedMissionInstanceProvider);
+    if (resolved != null) {
       await ref
           .read(
-            missionLifecycleControllerProvider(instance.instanceId).notifier,
+            missionLifecycleControllerProvider(
+              resolved.instance.instanceId,
+            ).notifier,
           )
           .accept();
     }
