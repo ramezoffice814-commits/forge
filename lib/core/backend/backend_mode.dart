@@ -72,6 +72,7 @@ class BackendModeStatus {
     required this.mode,
     required this.isSupabaseConfigured,
     required this.supabaseUrlHost,
+    required this.supabaseTarget,
   });
 
   final BackendMode mode;
@@ -82,10 +83,16 @@ class BackendModeStatus {
   /// ever surfacing the anon key itself.
   final String? supabaseUrlHost;
 
+  /// `staging`/`production`/`null` — safe to show/log on its own; it is a
+  /// label, never a credential. Lets a diagnostics screen or crash report
+  /// say "this is staging" without ever needing the host or key nearby.
+  final SupabaseTarget? supabaseTarget;
+
   @override
   String toString() =>
       'BackendModeStatus(mode: $mode, supabaseConfigured: '
-      '$isSupabaseConfigured, host: $supabaseUrlHost)';
+      '$isSupabaseConfigured, host: $supabaseUrlHost, '
+      'target: $supabaseTarget)';
 }
 
 BackendModeStatus buildBackendModeStatus(BackendMode mode) {
@@ -97,5 +104,6 @@ BackendModeStatus buildBackendModeStatus(BackendMode mode) {
     mode: mode,
     isSupabaseConfigured: AppConfig.isSupabaseConfigured,
     supabaseUrlHost: host,
+    supabaseTarget: AppConfig.supabaseTarget,
   );
 }

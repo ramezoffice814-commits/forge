@@ -10,6 +10,7 @@
 import { handlePreflight, corsHeaders } from "../_shared/cors.ts";
 import { authenticate } from "../_shared/auth.ts";
 import { errorResponse, ForgeError, parsePostgresError } from "../_shared/errors.ts";
+import { logOutcome } from "../_shared/observability.ts";
 import { assertNoForbiddenAuthorityFields } from "../_shared/validation.ts";
 import { validateProgressPayload } from "../_shared/progress.ts";
 import {
@@ -20,16 +21,21 @@ import {
   requireUuid,
 } from "../_shared/request.ts";
 
+const FUNCTION_NAME = "submit-mission";
+
 Deno.serve(async (req: Request) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
+
+  const start = performance.now();
+  let commandId: string | null = null;
 
   try {
     const { client } = await authenticate(req);
     const body = await parseJsonBody(req);
     assertNoForbiddenAuthorityFields(body);
 
-    const commandId = requireString(body, "commandId");
+    commandId = requireString(body, "commandId");
     const idempotencyKey = requireString(body, "idempotencyKey");
     const missionInstanceId = requireUuid(body, "missionInstanceId");
     const sequence = requireSequence(body);
@@ -51,6 +57,13 @@ Deno.serve(async (req: Request) => {
 
     if (error) throw parsePostgresError(error);
 
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId,
+      resultCode: (data as { status?: string })?.status ?? "accepted",
+      durationMs: Math.round(performance.now() - start),
+      success: (data as { status?: string })?.status !== "rejected",
+    });
     // forge_submit_mission returns a rejected-but-not-thrown envelope
     // for "completion requirements not met" (the mission stays open,
     // so this is a normal, expected outcome — not a transport error).
@@ -62,6 +75,13 @@ Deno.serve(async (req: Request) => {
     });
   } catch (err) {
     const forgeError = err instanceof ForgeError ? err : parsePostgresError(err);
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId,
+      resultCode: forgeError.errorCode,
+      durationMs: Math.round(performance.now() - start),
+      success: false,
+    });
     return errorResponse(forgeError, corsHeaders);
   }
 });

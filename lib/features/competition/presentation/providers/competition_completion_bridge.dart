@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../missions/presentation/providers/mission_instance_provider.dart';
+import '../../../missions/presentation/providers/resolved_mission_instance_controller.dart';
 import '../../../progression/presentation/providers/progression_controller.dart';
 import '../../../progression/presentation/providers/progression_state.dart';
 import 'competition_controller.dart';
@@ -18,7 +18,11 @@ import 'competition_providers.dart';
 /// Kept as its own provider (watched once from a long-lived screen — see
 /// `DashboardPage`), same reasoning as `missionCompletionBridgeProvider`.
 final competitionCompletionBridgeProvider = Provider<void>((ref) {
-  final instance = ref.watch(missionInstanceProvider);
+  // resolvedMissionInstanceProvider, not missionInstanceProvider (Roadmap
+  // Item 13C) — must stay in lockstep with missionCompletionBridgeProvider's
+  // own switch, since `evaluation.missionInstanceId` (set from that
+  // bridge) is compared against this instance's id below.
+  final instance = ref.watch(resolvedMissionInstanceProvider)?.instance;
   if (instance == null) return;
 
   void reactIfMatches(ProgressionState state) {

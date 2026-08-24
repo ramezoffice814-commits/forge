@@ -16,14 +16,31 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders, handlePreflight } from "../_shared/cors.ts";
+import { logOutcome } from "../_shared/observability.ts";
+
+const FUNCTION_NAME = "finalize-week";
 
 Deno.serve(async (req: Request) => {
   const preflight = handlePreflight(req);
   if (preflight) return preflight;
 
+  const start = performance.now();
+
+  // Never logged: the secret's actual value, or the header carrying it —
+  // only whether the check passed. commandId is a fixed, request-body-
+  // independent label until the body is parsed below, matching the
+  // "commandId (mission commands) or a short fixed label (cron
+  // functions)" contract in observability.ts.
   const expectedSecret = Deno.env.get("FORGE_CRON_SECRET");
   const providedSecret = req.headers.get("x-cron-secret");
   if (!expectedSecret || providedSecret !== expectedSecret) {
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId: "cron:unauthenticated",
+      resultCode: "forbidden",
+      durationMs: Math.round(performance.now() - start),
+      success: false,
+    });
     return new Response(
       JSON.stringify({ status: "rejected", errorCode: "forbidden", message: "Not authorized." }),
       { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -34,12 +51,26 @@ Deno.serve(async (req: Request) => {
   try {
     body = await req.json();
   } catch {
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId: "cron:invalid-body",
+      resultCode: "invalid_payload",
+      durationMs: Math.round(performance.now() - start),
+      success: false,
+    });
     return new Response(
       JSON.stringify({ status: "rejected", errorCode: "invalid_payload", message: "Body must be JSON." }),
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
   if (typeof body.seasonId !== "string" || typeof body.weekNumber !== "number") {
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId: "cron:invalid-body",
+      resultCode: "invalid_payload",
+      durationMs: Math.round(performance.now() - start),
+      success: false,
+    });
     return new Response(
       JSON.stringify({
         status: "rejected",
@@ -49,10 +80,18 @@ Deno.serve(async (req: Request) => {
       { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
+  const commandId = `finalize-week:${body.seasonId}:${body.weekNumber}`;
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
   if (!supabaseUrl || !serviceRoleKey) {
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId,
+      resultCode: "internal_error",
+      durationMs: Math.round(performance.now() - start),
+      success: false,
+    });
     return new Response(
       JSON.stringify({ status: "rejected", errorCode: "internal_error", message: "Function misconfigured." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -67,12 +106,26 @@ Deno.serve(async (req: Request) => {
 
   if (error) {
     console.error("finalize-week failed:", error.message);
+    logOutcome({
+      function: FUNCTION_NAME,
+      commandId,
+      resultCode: "internal_error",
+      durationMs: Math.round(performance.now() - start),
+      success: false,
+    });
     return new Response(
       JSON.stringify({ status: "rejected", errorCode: "internal_error", message: "Finalization failed." }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   }
 
+  logOutcome({
+    function: FUNCTION_NAME,
+    commandId,
+    resultCode: "accepted",
+    durationMs: Math.round(performance.now() - start),
+    success: true,
+  });
   return new Response(
     JSON.stringify({ status: "accepted", rowsWritten: data }),
     { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },

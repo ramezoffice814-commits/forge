@@ -206,17 +206,33 @@ has only been exercised against a local Supabase instance so far — see
 Golden (pixel-comparison) tests are isolated from the rest of the suite
 via the `golden` tag in `dart_test.yaml`, run with
 `flutter test --tags=golden` separately from
-`flutter test --exclude-tags=golden`. This exists because golden output is
-sensitive to the host's font-fallback chain: the app renders text with
-`google_fonts`' Inter family, but the test sandbox doesn't bundle real
-Inter `.ttf` assets and `GoogleFonts.config.allowRuntimeFetching` is
-deliberately `false` in tests (no network fetch during a test run), so a
-substitute system font renders instead — producing a small
-(observed: 0.04%–0.54%) pixel diff against the committed baseline images
-without any actual UI regression. The reference baselines were generated
-on Windows; running `--tags=golden` on a different OS/font-availability
-combination is expected to show this same class of diff. This is a known
-visual-test infrastructure gap (fixing it means bundling real Inter
-`.ttf` files as test assets, or configuring `google_fonts` to skip
-loading entirely in tests), not an application defect — every non-golden
-test exercises the same widgets' actual behavior and logic.
+`flutter test --exclude-tags=golden`. All 4 golden test files set
+`GoogleFonts.config.allowRuntimeFetching = false` so a run never depends
+on network access.
+
+Production renders text via `google_fonts`' Inter family
+(`lib/core/theme/forge_theme.dart`), which only ever requests two real
+weights — Regular (400) and Medium (500); every other weight seen
+elsewhere in the app is a `copyWith`/plain `TextStyle` override applied
+on top of one of those two already-resolved styles, rendered via Skia's
+weight synthesis rather than a separate `google_fonts` asset lookup.
+Those two weights are bundled as real `.ttf` assets under
+`assets/fonts/` (declared in `pubspec.yaml`; see
+`assets/fonts/README.md` for their source/license/integrity — SIL Open
+Font License, downloaded from Google Fonts' own CDN at the exact URL
+and hash the installed `google_fonts` package would fetch at runtime),
+so `google_fonts` resolves them from the app's own asset bundle with
+`allowRuntimeFetching` still `false`.
+
+Before this was fixed (Roadmap Item 13/13B/13C), no font asset was
+bundled, so with runtime fetching disabled `google_fonts` couldn't
+render any Inter glyphs at all in the test sandbox — not a "substitute
+system font" as this note previously (incorrectly) assumed, but literal
+missing-glyph "tofu" boxes for every piece of text. The committed
+baseline images had themselves been captured under that same broken
+state, so they showed tofu boxes too, which is why the diff against a
+correctly-fonted render had stayed small enough to not always fail —
+until it did. All 18 baselines have been regenerated against the fixed,
+deterministic font setup and now show the actual intended Forge
+typography; every changed image was reviewed individually before being
+accepted (see the Item 13B/13C PR description for the review notes).
