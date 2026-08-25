@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/backend/backend_providers.dart';
 import '../../../auth/presentation/auth_state.dart';
 import '../../../auth/presentation/auth_state_notifier.dart';
 import '../../../missions/domain/aggregates/mission_lifecycle_state.dart' as lifecycle;
@@ -76,6 +77,12 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     final resolved = ref.read(resolvedMissionInstanceProvider);
     if (resolved == null) return const [];
 
+    // Reminder "last shown" state must never be shared across accounts on
+    // the same device (spec section 10) — see LocalReminderStore's own
+    // doc comment for why this can't just be the bare dedup key.
+    final userId = ref.read(currentBackendUserIdProvider);
+    if (userId == null) return const [];
+
     final store = ref.read(localReminderStoreProvider);
     final now = DateTime.now();
     final lifecycleState = ref.read(
@@ -99,27 +106,27 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     final dailyMission = LocalReminderEngine.dailyMissionReminder(
       preferences: preferences,
       localNow: now,
-      lastShownAt: await store.lastShownAt(dailyMissionKey),
+      lastShownAt: await store.lastShownAt(userId, dailyMissionKey),
       missionInstanceId: resolved.instance.instanceId,
       missionTitle: resolved.instance.title,
       missionAlreadyAccepted: isAcceptedOrLater,
     );
     if (dailyMission != null) {
       results.add(dailyMission);
-      await store.recordShown(dailyMission.dedupKey, now);
+      await store.recordShown(userId, dailyMission.dedupKey, now);
     }
 
     final dailyTransmissionKey = 'daily_transmission:${_dateKey(now)}';
     final dailyTransmission = LocalReminderEngine.dailyTransmissionReminder(
       preferences: preferences,
       localNow: now,
-      lastShownAt: await store.lastShownAt(dailyTransmissionKey),
+      lastShownAt: await store.lastShownAt(userId, dailyTransmissionKey),
       transmissionAlreadyAvailableToUser: true,
       missionAlreadyAccepted: isAcceptedOrLater,
     );
     if (dailyTransmission != null) {
       results.add(dailyTransmission);
-      await store.recordShown(dailyTransmission.dedupKey, now);
+      await store.recordShown(userId, dailyTransmission.dedupKey, now);
     }
 
     if (isAcceptedOrLater && !isCompleted && acceptedAt != null) {
@@ -127,7 +134,7 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       final followup = LocalReminderEngine.missionFollowupReminder(
         preferences: preferences,
         localNow: now,
-        lastShownAt: await store.lastShownAt(followupKey),
+        lastShownAt: await store.lastShownAt(userId, followupKey),
         acceptedAt: acceptedAt,
         missionInstanceId: resolved.instance.instanceId,
         missionTitle: resolved.instance.title,
@@ -135,7 +142,7 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       );
       if (followup != null) {
         results.add(followup);
-        await store.recordShown(followup.dedupKey, now);
+        await store.recordShown(userId, followup.dedupKey, now);
       }
     }
 
