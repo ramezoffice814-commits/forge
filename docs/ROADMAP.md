@@ -142,20 +142,60 @@ verified and **not** production-ready — no Supabase project has been
 created outside a local machine, and no Edge Function has been deployed
 anywhere.
 
+### 13 / 13B / 13C — Staging Deployment, Verification-Gap Closure, Live Mission Identity Reconciliation
+Moved Forge from *locally runtime verified* to *staging verified* against
+the real `forge-staging` Supabase project: staging/production target
+config, all 24 migrations and 14 SQL test files re-verified directly
+against staging Postgres, all 8 Edge Functions deployed, real
+adapter-level integration tests against staging (auth, mission lifecycle,
+retry, conflict, offline reconnect, account switch), Dart/SQL reward
+parity fixtures, a root-caused-and-fixed mission-identity bug (live mode
+now always adopts the server-confirmed `resolvedMissionInstanceProvider`
+id, never a locally-generated one), `FORGE_CRON_SECRET` provisioned and
+staging cron schedules activated, and structured observability
+(`logOutcome`) extended to all 8 functions.
+
+**Classification: STAGING VERIFIED**, with one documented caveat: no
+pixel-level UI automation of the live app (adapter/SQL/HTTP-level
+verification only). Not production-ready — no production Supabase
+project has been configured or deployed to.
+
+### 14 / 14B — AI Personalization & Coach Layer, Live Integration
+Advisory/personalization-only AI Coach module
+(`lib/features/ai_coach/`): mission explanation, Daily Transmission
+dialogue line, post-mission coaching, weekly recap, and a coach chat
+surface, all built on a provider-agnostic client abstraction, a
+privacy-minimized context (full/limited/disabled, defaulting to
+limited), deterministic fallback templates, client- and server-side rate
+limiting, and a server-side `ai-coach` Edge Function that never lets the
+Flutter app hold a provider credential. Wired live into the Dashboard
+mission card, the Daily Transmission screen (additive only — the
+existing dialogue/TTS/subtitle state machine is untouched), and Profile
+(a persisted privacy preference, restored on restart). One AI-suggested
+action (`requestEasierMission`) is wired end-to-end through a
+confirmation step to the existing deterministic
+`MissionSelectionController` — the AI never mutates mission state
+directly, and every other suggested action is recognized but not yet
+wired to anything.
+
+The `ai-coach` Edge Function is deployed to `forge-staging` and was
+smoke-tested there with real HTTP calls (all 5 tasks, plus missing-auth,
+unknown-task, and nested-authority-field-injection failure paths) — see
+the Item 14B PR for the full transcript. **No real AI provider is
+configured; the only provider wired anywhere is a deterministic, free
+mock** (provider cost: $0).
+
+**Classification: COMPLETE, mock-provider only, staging verified.** A
+real provider has not yet been selected, and the server-side rate
+limiter — confirmed correct in isolation but, per a real staging test,
+in-memory per warm isolate and **not** coordinated across concurrently
+warm instances — must become a persistent, cross-instance counter before
+any real, paid provider is connected. Not a blocker while the only
+provider is the free mock.
+
 ## Next
 
-### 13 — Staging Deployment & Flutter Live Integration
-Move Forge from *locally runtime verified* to *staging verified*, using a
-real non-production Supabase project: deploy all migrations and Edge
-Functions, configure staging-only environment variables and cron secret,
-exercise the real authoritative path end-to-end from the actual Flutter
-app (Daily Transmission → accept/start/progress/submit → confirmed XP →
-confirmed progression → confirmed achievement → confirmed competition
-score → leaderboard refresh), verify the offline queue/reconciliation
-path against a real network (idempotent retry on an unknown outcome,
-stale-sequence conflict reconciliation, account-switch isolation), staging
-week/season schedules, a Dart/SQL parity harness, and a staging-specific
-security pass.
+Item 15 has not yet been scoped.
 
 ## Further Out
 

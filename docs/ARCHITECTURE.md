@@ -179,12 +179,13 @@ specifically to enforce it:
   result into local state by subtracting the confirmed delta out of the
   provisional bucket, never by letting the client overwrite a confirmed
   value with a local guess.
-- **Current status: locally runtime verified, not staging- or
-  production-verified.** See
+- **Current status: STAGING VERIFIED** (Roadmap Items 13/13B/13C), not
+  production-verified — no production Supabase project has been
+  configured or deployed to. See
   [../supabase/tests/README.md](../supabase/tests/README.md) and
-  [../docs/ROADMAP.md](../docs/ROADMAP.md) Item 12 for exactly what that
-  means and Item 13 for what's still required before anything is
-  staging-verified.
+  [../docs/ROADMAP.md](../docs/ROADMAP.md) for exactly what that means
+  and its one documented caveat (no pixel-level UI automation of the
+  live app).
 
 ## Mock/live environment model
 
