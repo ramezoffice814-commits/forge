@@ -158,6 +158,29 @@ begin
   end if;
   raise notice 'PASS: direct client INSERT into notifications is rejected (no INSERT policy/grant exists)';
 
+  -- (4b) Forbidden RPC call: even calling forge_create_notification()
+  -- itself (not just the bare table) must be rejected for an
+  -- authenticated client — it is never granted EXECUTE, only invoked
+  -- internally from other SECURITY DEFINER functions.
+  caught := false;
+  begin
+    perform public.forge_create_notification(
+      user_b, 'achievement_unlock', 'forged-rpc:' || user_b::text, '{"title":"forged"}'::jsonb
+    );
+  exception
+    when insufficient_privilege then caught := true;
+    when others then
+      if sqlerrm ilike '%permission denied%' then
+        caught := true;
+      else
+        raise exception 'FAIL: unexpected error calling forge_create_notification directly: %', sqlerrm;
+      end if;
+  end;
+  if not caught then
+    raise exception 'FAIL: an authenticated client was able to call forge_create_notification() directly';
+  end if;
+  raise notice 'PASS: direct client call to forge_create_notification() is rejected (no EXECUTE grant)';
+
   -- (5) Read-state permission: user_a may mark their own notification
   -- read (read_at only)...
   set local role authenticated;
