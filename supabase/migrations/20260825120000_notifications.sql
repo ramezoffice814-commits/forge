@@ -216,6 +216,19 @@ on conflict (user_id) do nothing;
 -- inserted. Never granted to `authenticated`; only called from inside
 -- the other SECURITY DEFINER functions below, in the same transaction
 -- as the fact it records.
+--
+-- Observability (spec section 21): logs exactly one of
+-- notification_created / notification_deduplicated per call, via
+-- `raise log` — the Postgres server log, never returned to the client
+-- and never visible via any client-facing channel. Only `type` and
+-- `dedup_key` are logged; no email, no metadata payload, no JWT/secret
+-- of any kind. `notification_read`, `delivery_deferred_quiet_hours`,
+-- `delivery_attempted`, and `delivery_failed` are not emitted anywhere
+-- in this pass: read-state changes happen via a bare client UPDATE (no
+-- function call to hook a log into without adding a trigger purely for
+-- logging), and the other three describe a push/delivery channel this
+-- pass deliberately doesn't implement (in-app inbox only) — see
+-- NotificationInboxController's own doc comment on that same boundary.
 -- =======================================================================
 
 create or replace function public.forge_create_notification(
@@ -227,10 +240,21 @@ create or replace function public.forge_create_notification(
 returns void
 language plpgsql
 as $$
+declare
+  v_inserted boolean;
 begin
   insert into public.notifications (user_id, type, dedup_key, metadata)
   values (p_user_id, p_type, p_dedup_key, p_metadata)
-  on conflict (user_id, dedup_key) do nothing;
+  on conflict (user_id, dedup_key) do nothing
+  returning true into v_inserted;
+
+  if v_inserted then
+    raise log 'forge_notification_outcome event=notification_created type=% dedup_key=%',
+      p_type, p_dedup_key;
+  else
+    raise log 'forge_notification_outcome event=notification_deduplicated type=% dedup_key=%',
+      p_type, p_dedup_key;
+  end if;
 end;
 $$;
 
