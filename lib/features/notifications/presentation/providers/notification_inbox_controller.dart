@@ -77,6 +77,17 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       // take effect for server-authoritative rows (spec section 10) —
       // local reminders are already gated at creation time, so this is a
       // no-op for those, not a second, possibly-inconsistent filter.
+      //
+      // Quiet hours are deliberately NOT applied here: they gate the
+      // three client-owned reminder types at creation time in
+      // LocalReminderEngine (the one place they could otherwise
+      // interrupt the user, e.g. a future local push). Server-
+      // authoritative rows have no interrupt channel this pass — no OS
+      // push/local notification is implemented (in-app inbox only,
+      // spec section 14's own stated priority ordering) — and the inbox
+      // itself is pull-based: opening it is an explicit user action, not
+      // something quiet hours is meant to defer. If a push channel is
+      // added later, quiet hours must gate delivery there too.
       final combined = [...serverList, ...localList]
           .where((n) => preferences.allows(n.type))
           .toList()
