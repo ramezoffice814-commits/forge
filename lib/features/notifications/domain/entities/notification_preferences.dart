@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../enums/forge_notification_type.dart';
 import 'quiet_hours.dart';
 
 /// Client-owned (`trust_boundary.dart`): the user is the sole source of
@@ -73,5 +74,26 @@ class NotificationPreferences {
       quietHours: quietHours ?? this.quietHours,
       timezone: timezone ?? this.timezone,
     );
+  }
+
+  /// Whether a notification of [type] is allowed to be shown at all —
+  /// the single place category preferences actually take effect.
+  /// [NotificationInboxController] applies this to every server-fetched
+  /// row before it ever reaches the inbox UI; local reminders are
+  /// already gated the same way at creation time by
+  /// `LocalReminderEngine`, so applying it here too is a harmless,
+  /// consistency-guaranteeing no-op for those.
+  bool allows(ForgeNotificationType type) {
+    if (!masterEnabled) return false;
+    return switch (type) {
+      ForgeNotificationType.dailyMission => dailyMissionEnabled,
+      ForgeNotificationType.dailyTransmission => dailyTransmissionEnabled,
+      ForgeNotificationType.missionFollowup => missionFollowupEnabled,
+      ForgeNotificationType.achievementUnlock => achievementEnabled,
+      ForgeNotificationType.levelUp => progressionEnabled,
+      ForgeNotificationType.weekResult => competitionResultEnabled,
+      ForgeNotificationType.seasonResult => competitionResultEnabled,
+      ForgeNotificationType.weeklyRecap => weeklyRecapEnabled,
+    };
   }
 }

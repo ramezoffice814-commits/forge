@@ -44,6 +44,19 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       // build() (once a real sign-in happens) starts clean.
       return const NotificationInboxLoading();
     }
+    // `ref.listen`, deliberately not `ref.watch`: a preference change
+    // (e.g. the user turns off "Achievements" in settings) must trigger
+    // a fresh `_load()` so the inbox re-filters, but must NOT make that
+    // change count as this controller's own rebuild — `watch` would
+    // reset `state` back to Loading on every preferences change (and
+    // `NotificationPreferences` has no value equality, so even its own
+    // harmless default-then-loaded bootstrap transition would count),
+    // flickering the inbox back to a spinner for no visible reason.
+    // `listen` runs `_load()` as a side effect while leaving whatever
+    // `state` currently holds untouched until that fresh load resolves.
+    ref.listen(notificationPreferencesControllerProvider, (previous, next) {
+      Future.microtask(_load);
+    });
     Future.microtask(_load);
     return const NotificationInboxLoading();
   }
@@ -60,7 +73,13 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       final localList = await _computeLocalReminders(preferences);
       if (_disposed) return;
 
+      // Category/master preferences are the single place they actually
+      // take effect for server-authoritative rows (spec section 10) —
+      // local reminders are already gated at creation time, so this is a
+      // no-op for those, not a second, possibly-inconsistent filter.
       final combined = [...serverList, ...localList]
+          .where((n) => preferences.allows(n.type))
+          .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       state = NotificationInboxReady(combined);
     } catch (_) {

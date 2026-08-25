@@ -6,9 +6,11 @@ import 'package:forge/features/missions/presentation/providers/mission_lifecycle
 import 'package:forge/features/missions/presentation/providers/resolved_mission_instance_controller.dart';
 import 'package:forge/features/notifications/data/mock/mock_notification_repository.dart';
 import 'package:forge/features/notifications/domain/entities/forge_notification.dart';
+import 'package:forge/features/notifications/domain/entities/notification_preferences.dart';
 import 'package:forge/features/notifications/domain/enums/forge_notification_type.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_inbox_controller.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_inbox_state.dart';
+import 'package:forge/features/notifications/presentation/providers/notification_preferences_controller.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_providers.dart';
 
 import '../../../support/fake_auth_overrides.dart';
@@ -151,5 +153,70 @@ void main() {
     final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
 
     expect(state.notifications.any((n) => n.type == ForgeNotificationType.dailyMission), isFalse);
+  });
+
+  test('a disabled category is filtered out of the inbox entirely — a '
+      'server-authoritative row still exists, but must not be shown to a '
+      'user who opted out of that category', () async {
+    final repository = MockNotificationRepository(
+      seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+    );
+    await repository.updatePreferences(const NotificationPreferences(progressionEnabled: false));
+    final container = ProviderContainer(overrides: _baseOverrides(repository));
+    addTearDown(container.dispose);
+
+    await container.read(notificationInboxControllerProvider.notifier).ready;
+    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+
+    expect(state.notifications.any((n) => n.id == 'lvl-1'), isFalse);
+  });
+
+  test('the master toggle hides every server-authoritative notification, '
+      'not just one category', () async {
+    final repository = MockNotificationRepository(
+      seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+    );
+    await repository.updatePreferences(const NotificationPreferences(masterEnabled: false));
+    final container = ProviderContainer(overrides: _baseOverrides(repository));
+    addTearDown(container.dispose);
+
+    await container.read(notificationInboxControllerProvider.notifier).ready;
+    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+
+    expect(state.notifications, isEmpty);
+  });
+
+  test('changing a preference while the inbox is already loaded re-filters '
+      'it immediately, without requiring the user to navigate away and '
+      'back', () async {
+    final repository = MockNotificationRepository(
+      seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+    );
+    final container = ProviderContainer(overrides: _baseOverrides(repository));
+    addTearDown(container.dispose);
+
+    await container.read(notificationInboxControllerProvider.notifier).ready;
+    var state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    expect(state.notifications.any((n) => n.id == 'lvl-1'), isTrue);
+
+    await container
+        .read(notificationPreferencesControllerProvider.notifier)
+        .update(const NotificationPreferences(progressionEnabled: false));
+
+    // The reactive rebuild's own `_load()` is a fresh async task with no
+    // new `ready` signal of its own to await (the controller's `ready`
+    // completer already resolved from the first load) — poll a bounded
+    // number of microtask turns instead of asserting on a fixed delay.
+    NotificationInboxReady? refiltered;
+    for (var i = 0; i < 50; i++) {
+      await Future<void>.delayed(Duration.zero);
+      final current = container.read(notificationInboxControllerProvider);
+      if (current is NotificationInboxReady && !current.notifications.any((n) => n.id == 'lvl-1')) {
+        refiltered = current;
+        break;
+      }
+    }
+
+    expect(refiltered, isNotNull, reason: 'inbox was never re-filtered after the preference change');
   });
 }
