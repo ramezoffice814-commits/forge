@@ -7,6 +7,7 @@ import '../../../../core/backend/supabase_edge_functions_client.dart';
 import '../../data/ai_coach_cache_store.dart';
 import '../../data/ai_coach_client.dart';
 import '../../data/ai_coach_repository_impl.dart';
+import '../../data/ai_privacy_preference_store.dart';
 import '../../data/mock/mock_ai_coach_client.dart';
 import '../../data/supabase/supabase_ai_coach_client.dart';
 import '../../domain/entities/ai_personalization_profile.dart';
@@ -27,6 +28,27 @@ import '../../domain/usecases/send_coach_chat_message_usecase.dart';
 final aiPrivacyLevelProvider = StateProvider<AiPrivacyLevel>((ref) {
   return AiPrivacyLevel.limitedContext;
 });
+
+/// Loads the persisted privacy choice, if any, and applies it to
+/// [aiPrivacyLevelProvider] — `ref.watch`ed once from [ForgeApp] so a
+/// restart restores whatever the user last chose, without turning every
+/// other read of [aiPrivacyLevelProvider] into an async one. A `null`
+/// result (nothing saved yet) leaves the provider's own default
+/// ([AiPrivacyLevel.limitedContext]) untouched.
+final aiPrivacyBootstrapProvider = FutureProvider<void>((ref) async {
+  final saved = await ref.read(aiPrivacyPreferenceStoreProvider).load();
+  if (saved != null) {
+    ref.read(aiPrivacyLevelProvider.notifier).state = saved;
+  }
+});
+
+/// The one place [aiPrivacyLevelProvider] is ever changed by user action
+/// — updates the in-memory value immediately (so the UI reacts without
+/// waiting on a write) and persists it via [AiPrivacyPreferenceStore].
+Future<void> setAiPrivacyLevel(WidgetRef ref, AiPrivacyLevel level) async {
+  ref.read(aiPrivacyLevelProvider.notifier).state = level;
+  await ref.read(aiPrivacyPreferenceStoreProvider).save(level);
+}
 
 final aiPersonalizationProfileProvider =
     StateProvider<AiPersonalizationProfile>((ref) {

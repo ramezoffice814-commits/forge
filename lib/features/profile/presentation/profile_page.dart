@@ -8,6 +8,7 @@ import '../../../shared/widgets/forge_button.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
+import '../../ai_coach/presentation/widgets/ai_privacy_settings_tile.dart';
 import '../../competition/presentation/widgets/profile_competition_summary.dart';
 import '../../progression/presentation/providers/progression_controller.dart';
 import '../../progression/presentation/providers/progression_state.dart';
@@ -27,7 +28,7 @@ class ProfilePage extends ConsumerWidget {
     return ForgeScaffold(
       appBarTitle: 'Profile',
       body: switch (state) {
-        ProgressionReady ready => Padding(
+        ProgressionReady ready => SingleChildScrollView(
           padding: EdgeInsets.all(tokens.spacing.space4),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,6 +80,11 @@ class ProfilePage extends ConsumerWidget {
                     onPressed: () => context.goNamed(AppRouteNames.social),
                   ),
                 ],
+              ),
+              SizedBox(height: tokens.spacing.space3),
+              const ForgeCard(
+                elevation: ForgeCardElevation.md,
+                children: [AiPrivacySettingsTile()],
               ),
             ],
           ),
