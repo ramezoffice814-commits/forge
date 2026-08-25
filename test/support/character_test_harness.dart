@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:forge/core/storage/secure_key_value_store.dart';
 import 'package:forge/core/theme/forge_theme.dart';
+import 'package:forge/features/ai_coach/domain/enums/ai_privacy_level.dart';
+import 'package:forge/features/ai_coach/presentation/providers/ai_coach_providers.dart';
 import 'package:forge/features/auth/presentation/auth_state_notifier.dart';
 import 'package:forge/features/character/data/mock/fake_character_animation_controller.dart';
 import 'package:forge/features/character/data/mock/fake_tts_service.dart';
@@ -42,6 +44,12 @@ class TransmissionTestHarness {
       characterAnimationControllerFactoryProvider.overrideWithValue(
         FakeCharacterAnimationController.new,
       ),
+      // Character/transmission tests pin dialogue content via
+      // `TransmissionMockScenario`, not AI-generated text — disabling
+      // AI here keeps that content the deterministic thing under test.
+      // A test that specifically wants to exercise the AI line can
+      // still override this back via `extra`.
+      aiPrivacyLevelProvider.overrideWith((ref) => AiPrivacyLevel.disabled),
       ...extra,
     ];
   }
