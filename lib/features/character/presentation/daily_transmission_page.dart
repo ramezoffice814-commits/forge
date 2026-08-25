@@ -5,6 +5,12 @@ import '../../../core/theme/forge_tokens.dart';
 import '../../../shared/widgets/forge_button.dart';
 import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
+import '../../ai_coach/presentation/widgets/daily_transmission_ai_line.dart';
+import '../../auth/presentation/auth_state_notifier.dart';
+import '../../dashboard/domain/entities/weekly_snapshot.dart';
+import '../../dashboard/presentation/dashboard_notifier.dart';
+import '../../dashboard/presentation/dashboard_state.dart';
+import '../../missions/presentation/providers/resolved_mission_instance_controller.dart';
 import '../domain/entities/character_profile.dart';
 import 'controllers/daily_transmission_controller.dart';
 import 'controllers/daily_transmission_state.dart';
@@ -112,7 +118,7 @@ class _TransmissionBody extends StatelessWidget {
   }
 }
 
-class _TransmissionContent extends StatelessWidget {
+class _TransmissionContent extends ConsumerWidget {
   const _TransmissionContent({required this.state, required this.notifier});
 
   final DailyTransmissionState state;
@@ -121,7 +127,7 @@ class _TransmissionContent extends StatelessWidget {
   static const _wideBreakpoint = 900.0;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     final script = state.script!;
     const profile = CharacterProfile.watcher;
@@ -154,6 +160,7 @@ class _TransmissionContent extends StatelessWidget {
         if (state.hasReveal) ...[
           SizedBox(height: tokens.spacing.space4),
           MissionRevealPanel(script: script),
+          const _AiTransmissionLine(),
         ],
       ],
     );
@@ -231,6 +238,47 @@ class _TransmissionContent extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Additive-only (Roadmap Item 14B): reads whatever Dashboard/mission
+/// state already exists rather than introducing any new fetch, never
+/// touches [DailyTransmissionController]'s own state machine, and
+/// [DailyTransmissionAiLine] itself already renders nothing while AI is
+/// disabled, still resolving, or the message is a plain-fallback empty
+/// case — so this can sit here unconditionally once the mission has
+/// been revealed without risking the reveal/acceptance flow above it.
+class _AiTransmissionLine extends ConsumerWidget {
+  const _AiTransmissionLine();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final displayName =
+        ref.watch(authStateNotifierProvider).session?.user.displayName ??
+        'friend';
+    final resolved = ref.watch(resolvedMissionInstanceProvider);
+    final dashboardState = ref.watch(dashboardNotifierProvider);
+
+    var activeDaysThisWeek = 0;
+    var consistencySummary = 'just getting started';
+    if (dashboardState is DashboardPopulated) {
+      final days = dashboardState.overview.weeklySnapshot.days;
+      activeDaysThisWeek = days
+          .where((d) => d.status == DayCompletionStatus.completed)
+          .length;
+      consistencySummary = activeDaysThisWeek >= 5
+          ? 'steady this week'
+          : activeDaysThisWeek == 0
+          ? 'just getting started'
+          : 'picking things up this week';
+    }
+
+    return DailyTransmissionAiLine(
+      displayName: displayName,
+      isRecoveryMode: resolved?.instance.recoveryMission ?? false,
+      activeDaysThisWeek: activeDaysThisWeek,
+      consistencySummary: consistencySummary,
     );
   }
 }

@@ -172,7 +172,10 @@ class _NarrowLayout extends StatelessWidget {
       children: [
         DisciplineOverviewCard(overview: overview),
         SizedBox(height: tokens.spacing.space4),
-        TodayMissionCard(mission: overview.todayMissionPreview),
+        TodayMissionCard(
+          mission: overview.todayMissionPreview,
+          displayName: overview.displayName,
+        ),
         SizedBox(height: tokens.spacing.space4),
         WeeklySnapshotCard(snapshot: overview.weeklySnapshot),
         SizedBox(height: tokens.spacing.space4),
@@ -198,7 +201,10 @@ class _WideLayout extends StatelessWidget {
       children: [
         Expanded(
           flex: 3,
-          child: TodayMissionCard(mission: overview.todayMissionPreview),
+          child: TodayMissionCard(
+            mission: overview.todayMissionPreview,
+            displayName: overview.displayName,
+          ),
         ),
         SizedBox(width: tokens.spacing.space4),
         Expanded(

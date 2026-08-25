@@ -21,6 +21,12 @@ import 'package:forge/features/character/data/transmission_repository_provider.d
 import 'package:forge/features/character/presentation/controllers/daily_transmission_controller.dart';
 import 'package:forge/features/character/presentation/daily_transmission_page.dart';
 import 'package:forge/features/character/data/tts_service_provider.dart';
+import 'package:forge/features/ai_coach/data/ai_coach_client.dart';
+import 'package:forge/features/ai_coach/domain/entities/ai_coach_request.dart';
+import 'package:forge/features/ai_coach/domain/entities/ai_coach_response.dart';
+import 'package:forge/features/ai_coach/domain/enums/ai_privacy_level.dart';
+import 'package:forge/features/ai_coach/presentation/providers/ai_coach_providers.dart';
+import 'package:forge/features/ai_coach/presentation/providers/mission_ai_insight_provider.dart';
 import 'package:forge/features/missions/presentation/providers/resolved_mission_instance_controller.dart';
 import 'package:forge/features/missions/presentation/widgets/mission_explanation_panel.dart';
 import 'package:forge/shared/widgets/forge_button.dart';
@@ -28,6 +34,16 @@ import 'package:forge/shared/widgets/forge_button.dart';
 import '../support/fake_auth_overrides.dart';
 import '../support/fake_secure_key_value_store.dart';
 import '../support/fast_transmission_repository.dart';
+
+class _CapturingAiCoachClient implements AiCoachClient {
+  AiCoachRequest? lastRequest;
+
+  @override
+  Future<AiCoachResponse> generate(AiCoachRequest request) async {
+    lastRequest = request;
+    return AiCoachResponse.local('captured');
+  }
+}
 
 class _FakeLiveAssignmentClient implements MissionAssignmentClient {
   int callCount = 0;
@@ -174,4 +190,76 @@ void main() {
           'accepting — never regenerated mid-flow',
     );
   });
+
+  // Plain `test`, not `testWidgets`: no widget tree is ever pumped here,
+  // only Riverpod providers — using `testWidgets` needlessly would also
+  // fail this test on the "no pending timers at teardown" invariant
+  // `flutter_test` enforces for widget tests, tripped by the AI
+  // repository's own internal request timeout timer even though it
+  // resolves and is cancelled well before that invariant is checked.
+  test(
+    'AI Coach mission explanation request carries the exact same mission '
+    'facts as the authoritative resolved instance (Roadmap Item 14B)',
+    () async {
+      final tts = FakeTtsService();
+      final aiClient = _CapturingAiCoachClient();
+
+      final container = ProviderContainer(
+        overrides: [
+          secureKeyValueStoreProvider.overrideWithValue(
+            FakeSecureKeyValueStore(),
+          ),
+          authStateNotifierProvider.overrideWith(FakeAuthenticatedNotifier.new),
+          ttsServiceProvider.overrideWithValue(tts),
+          characterAnimationControllerFactoryProvider.overrideWithValue(
+            FakeCharacterAnimationController.new,
+          ),
+          transmissionRepositoryProvider.overrideWithValue(
+            fastMockTransmissionRepository(
+              TransmissionMockScenario.normalActive,
+            ),
+          ),
+          aiCoachClientProvider.overrideWithValue(aiClient),
+          aiPrivacyLevelProvider.overrideWith(
+            (ref) => AiPrivacyLevel.fullContext,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      // Reading resolvedMissionInstanceProvider first, exactly like the
+      // Dashboard/Transmission tests above, so this asserts against the
+      // one authoritative source rather than a second, independently
+      // constructed expectation.
+      final ready = container.read(
+        resolvedMissionInstanceControllerProvider.notifier,
+      );
+      await ready.ready;
+      final resolved = container.read(resolvedMissionInstanceProvider)!;
+
+      final response = await container.read(
+        missionAiInsightProvider('Test User').future,
+      );
+      expect(response, isNotNull);
+
+      final captured = aiClient.lastRequest;
+      expect(captured, isNotNull);
+      expect(captured!.context.currentMissionTitle, resolved.instance.title);
+      expect(
+        captured.context.currentMissionCategory,
+        resolved.instance.category.name,
+      );
+      expect(
+        captured.context.currentMissionDifficulty,
+        resolved.instance.resolvedDifficulty.name,
+      );
+      expect(
+        captured.context.currentMissionTitle,
+        expectedTitle,
+        reason:
+            'sanity check against the same deterministic title the '
+            'Dashboard/Transmission tests above assert on',
+      );
+    },
+  );
 }

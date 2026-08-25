@@ -10,6 +10,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge/core/storage/secure_key_value_store.dart';
 import 'package:forge/core/theme/forge_theme.dart';
+import 'package:forge/features/ai_coach/domain/enums/ai_privacy_level.dart';
+import 'package:forge/features/ai_coach/presentation/providers/ai_coach_providers.dart';
 import 'package:forge/features/auth/presentation/auth_state_notifier.dart';
 import 'package:forge/features/dashboard/data/dashboard_repository_provider.dart';
 import 'package:forge/features/dashboard/data/mock/mock_dashboard_repository.dart';
@@ -35,6 +37,11 @@ Widget _wrap(
       authStateNotifierProvider.overrideWith(FakeAuthenticatedNotifier.new),
       dashboardMockScenarioProvider.overrideWithValue(scenario),
       missionMockScenarioProvider.overrideWithValue(missionScenario),
+      // AI insight text is dynamic (mock-generated) and not what this
+      // golden verifies — pixel-comparing static dashboard layout. AI
+      // disabled is itself a real, fully-supported user mode, so this
+      // is an honest test configuration, not a workaround.
+      aiPrivacyLevelProvider.overrideWith((ref) => AiPrivacyLevel.disabled),
     ],
     child: MaterialApp(theme: ForgeTheme.dark(), home: const DashboardPage()),
   );
