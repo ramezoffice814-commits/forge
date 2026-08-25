@@ -10,6 +10,7 @@ import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
 import '../../ai_coach/presentation/widgets/ai_privacy_settings_tile.dart';
 import '../../competition/presentation/widgets/profile_competition_summary.dart';
+import '../../notifications/presentation/widgets/notification_settings_tile.dart';
 import '../../progression/presentation/providers/progression_controller.dart';
 import '../../progression/presentation/providers/progression_state.dart';
 import '../../progression/presentation/widgets/level_badge.dart';
@@ -80,6 +81,11 @@ class ProfilePage extends ConsumerWidget {
                     onPressed: () => context.goNamed(AppRouteNames.social),
                   ),
                 ],
+              ),
+              SizedBox(height: tokens.spacing.space3),
+              const ForgeCard(
+                elevation: ForgeCardElevation.md,
+                children: [NotificationSettingsTile()],
               ),
               SizedBox(height: tokens.spacing.space3),
               const ForgeCard(
