@@ -37,6 +37,10 @@ abstract final class AppRoutePaths {
 
   static String publicProfile(String userId) => '$publicProfilePrefix$userId';
 
+  // Same "full-screen, pushed on top of the shell" reasoning as
+  // `dailyTransmission`/`social` — see `NotificationInboxPage`.
+  static const notifications = '/notifications';
+
   static const protected = [
     home,
     rank,
@@ -45,6 +49,7 @@ abstract final class AppRoutePaths {
     profile,
     dailyTransmission,
     social,
+    notifications,
   ];
   static const publicAuthRoutes = [signIn, signUp, forgotPassword];
 }
@@ -67,4 +72,5 @@ abstract final class AppRouteNames {
   static const activeMission = 'active-mission';
   static const social = 'social';
   static const publicProfile = 'public-profile';
+  static const notifications = 'notifications';
 }

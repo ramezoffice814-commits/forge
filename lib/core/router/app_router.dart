@@ -10,6 +10,7 @@ import '../../features/auth/presentation/splash_page.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/leaderboard/presentation/leaderboard_page.dart';
 import '../../features/missions/presentation/pages/active_mission_page.dart';
+import '../../features/notifications/presentation/pages/notification_inbox_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
@@ -96,6 +97,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         name: AppRouteNames.publicProfile,
         builder: (context, state) =>
             PublicProfilePage(userId: state.pathParameters['userId']!),
+      ),
+      // Same reasoning again — see `NotificationInboxPage`.
+      GoRoute(
+        path: AppRoutePaths.notifications,
+        name: AppRouteNames.notifications,
+        builder: (context, state) => const NotificationInboxPage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>
