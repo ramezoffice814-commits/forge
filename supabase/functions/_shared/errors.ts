@@ -25,6 +25,8 @@ export const ErrorCode = {
   IntegrityRejected: "integrity_rejected",
   InvalidMissionSelection: "invalid_mission_selection",
   InternalError: "internal_error",
+  RateLimited: "rate_limited",
+  ProviderError: "provider_error",
 } as const;
 
 export type ErrorCodeValue = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -44,6 +46,8 @@ const STATUS_BY_CODE: Record<ErrorCodeValue, number> = {
   [ErrorCode.IntegrityRejected]: 403,
   [ErrorCode.InvalidMissionSelection]: 422,
   [ErrorCode.InternalError]: 500,
+  [ErrorCode.RateLimited]: 429,
+  [ErrorCode.ProviderError]: 502,
 };
 
 export class ForgeError extends Error {
