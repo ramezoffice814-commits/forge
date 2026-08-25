@@ -21,10 +21,17 @@ class AiCoachRepositoryImpl implements AiCoachRepository {
     required AiPrivacyLevel Function() privacyLevel,
     AiCoachRateLimiter? rateLimiter,
     Duration timeout = const Duration(seconds: 12),
+    // Not initializing formals (this._client etc.): the external
+    // parameter names below read better than the private field names
+    // an initializing formal would force them to match exactly.
+    // ignore: prefer_initializing_formals
   }) : _client = client,
+       // ignore: prefer_initializing_formals
        _cacheStore = cacheStore,
+       // ignore: prefer_initializing_formals
        _privacyLevel = privacyLevel,
        _rateLimiter = rateLimiter ?? AiCoachRateLimiter(),
+       // ignore: prefer_initializing_formals
        _timeout = timeout;
 
   final AiCoachClient _client;

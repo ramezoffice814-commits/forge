@@ -10,7 +10,10 @@ class AiCoachRateLimiter {
     this.maxRequestsPerWindow = 10,
     this.window = const Duration(minutes: 1),
     DateTime Function() now = DateTime.now,
-  }) : _now = now;
+    // `now` reads better as the public constructor parameter name than
+    // the private `_now` field name an initializing formal would force
+    // it to be.
+  }) : _now = now; // ignore: prefer_initializing_formals
 
   final int maxRequestsPerWindow;
   final Duration window;
