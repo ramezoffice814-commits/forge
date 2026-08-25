@@ -18,10 +18,17 @@ import 'package:forge/features/dashboard/data/mock/mock_dashboard_repository.dar
 import 'package:forge/features/dashboard/presentation/dashboard_page.dart';
 import 'package:forge/features/missions/data/mock/mock_mission_context.dart';
 import 'package:forge/features/missions/presentation/providers/mission_providers.dart';
+import 'package:forge/features/notifications/presentation/providers/notification_inbox_controller.dart';
+import 'package:forge/features/notifications/presentation/providers/notification_inbox_state.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../support/fake_auth_overrides.dart';
 import '../../../support/fake_secure_key_value_store.dart';
+
+class _FixedEmptyInbox extends NotificationInboxController {
+  @override
+  NotificationInboxState build() => const NotificationInboxReady([]);
+}
 
 /// No router ancestor is needed here — `context.goNamed` calls only live
 /// inside onTap closures nothing here ever taps, so a plain [MaterialApp]
@@ -42,6 +49,11 @@ Widget _wrap(
       // disabled is itself a real, fully-supported user mode, so this
       // is an honest test configuration, not a workaround.
       aiPrivacyLevelProvider.overrideWith((ref) => AiPrivacyLevel.disabled),
+      // The unread badge is dynamic (real local-reminder computation) —
+      // not what this golden verifies. Pinned to a fixed, zero-unread
+      // inbox so the bell renders deterministically; the bell's own
+      // enabled-vs-disabled visual style is still the real Item 15 code.
+      notificationInboxControllerProvider.overrideWith(_FixedEmptyInbox.new),
     ],
     child: MaterialApp(theme: ForgeTheme.dark(), home: const DashboardPage()),
   );

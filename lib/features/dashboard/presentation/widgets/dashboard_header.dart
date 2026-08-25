@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/forge_tokens.dart';
 import '../../../../shared/widgets/forge_tag.dart';
+import '../../../notifications/presentation/providers/notification_inbox_controller.dart';
+import '../../../notifications/presentation/providers/notification_inbox_state.dart';
 import '../../domain/entities/dashboard_overview.dart';
 
-/// Premium top header: greeting + name, title/class tag, avatar, and a
-/// (not-yet-wired) notification action. Every piece of text comes from
-/// [overview] — nothing here is a hardcoded user name.
-class DashboardHeader extends StatelessWidget {
+/// Premium top header: greeting + name, title/class tag, avatar, and the
+/// notification bell (Roadmap Item 15) — an unread badge, opening
+/// `NotificationInboxPage`. Every piece of text comes from [overview] —
+/// nothing here is a hardcoded user name.
+class DashboardHeader extends ConsumerWidget {
   const DashboardHeader({super.key, required this.overview});
 
   final DashboardOverview overview;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     final initials = _initials(overview.displayName);
 
@@ -67,19 +73,57 @@ class DashboardHeader extends StatelessWidget {
             ],
           ),
         ),
-        Semantics(
-          button: true,
-          label: 'Notifications',
-          child: Tooltip(
-            message: 'Notifications (coming soon)',
-            child: IconButton(
-              onPressed: null,
-              icon: Icon(
-                Icons.notifications_none_rounded,
-                color: tokens.text.withValues(alpha: 0.5),
+        Builder(
+          builder: (context) {
+            final inboxState = ref.watch(notificationInboxControllerProvider);
+            final unreadCount = inboxState is NotificationInboxReady
+                ? inboxState.unreadCount
+                : 0;
+            return Semantics(
+              button: true,
+              label: unreadCount > 0
+                  ? 'Notifications, $unreadCount unread'
+                  : 'Notifications',
+              excludeSemantics: true,
+              child: Tooltip(
+                message: 'Notifications',
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    IconButton(
+                      onPressed: () => context.pushNamed(AppRouteNames.notifications),
+                      icon: Icon(
+                        Icons.notifications_none_rounded,
+                        color: tokens.text.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    if (unreadCount > 0)
+                      Positioned(
+                        top: 6,
+                        right: 6,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          constraints: const BoxConstraints(minWidth: 16),
+                          decoration: BoxDecoration(
+                            color: tokens.accent,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            unreadCount > 9 ? '9+' : '$unreadCount',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     );
