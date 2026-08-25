@@ -7,6 +7,9 @@ import '../../../../core/theme/forge_tokens.dart';
 import '../../../../shared/widgets/forge_button.dart';
 import '../../../../shared/widgets/forge_card.dart';
 import '../../../../shared/widgets/forge_tag.dart';
+import '../../../ai_coach/domain/enums/ai_privacy_level.dart';
+import '../../../ai_coach/presentation/providers/ai_coach_providers.dart';
+import '../../../ai_coach/presentation/widgets/ai_mission_insight_panel.dart';
 import '../../../missions/domain/aggregates/mission_lifecycle_state.dart'
     as lifecycle;
 import '../../../missions/presentation/providers/mission_lifecycle_controller.dart';
@@ -25,9 +28,17 @@ import 'mission_transmission_frame.dart';
 /// the old `localMissionAcceptedProvider` boolean flag, which only ever
 /// tracked "accepted or not" rather than the mission's real lifecycle.
 class TodayMissionCard extends ConsumerWidget {
-  const TodayMissionCard({super.key, required this.mission});
+  const TodayMissionCard({
+    super.key,
+    required this.mission,
+    required this.displayName,
+  });
 
   final MissionPreview mission;
+
+  /// Only for [AiMissionInsightPanel] — see that widget's doc comment
+  /// for why the mission facts themselves are never passed through here.
+  final String displayName;
 
   /// Maps the aggregate's real lifecycle onto the dashboard's simpler
   /// display bucket — but only to *advance* [mission]'s own (mock/scenario)
@@ -87,6 +98,8 @@ class TodayMissionCard extends ConsumerWidget {
     final label = missionActionLabel(status);
     final opensTransmission =
         mission.transmissionAvailable && status == MissionStatus.notStarted;
+    final aiEnabled =
+        ref.watch(aiPrivacyLevelProvider) != AiPrivacyLevel.disabled;
 
     return ForgeCard(
       elevation: ForgeCardElevation.md,
@@ -162,6 +175,19 @@ class TodayMissionCard extends ConsumerWidget {
         if (mission.selectionReasons.isNotEmpty) ...[
           SizedBox(height: tokens.spacing.space3),
           MissionExplanationPanel(reasons: mission.selectionReasons),
+        ],
+        // Conditional on the same `ForgeCard`-children-list pattern as
+        // `MissionExplanationPanel` above, not just inside the widget:
+        // `ForgeCard` inserts a fixed gap before every entry after the
+        // first regardless of that entry's own size, so including this
+        // unconditionally would leave a dead gap whenever AI is
+        // disabled — the one case a golden test actually exercises
+        // (dashboard_golden_test.dart pins AI disabled deliberately, to
+        // keep this screen's pixel baseline about layout, not
+        // AI-generated text).
+        if (aiEnabled) ...[
+          SizedBox(height: tokens.spacing.space3),
+          AiMissionInsightPanel(displayName: displayName),
         ],
         SizedBox(height: tokens.spacing.space4),
         ForgeButton(

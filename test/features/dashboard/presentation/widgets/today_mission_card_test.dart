@@ -16,6 +16,7 @@ import 'package:forge/features/missions/domain/progress/mission_progress_definit
 import 'package:forge/features/missions/domain/progress/mission_progress_state.dart';
 import 'package:forge/features/missions/presentation/providers/mission_lifecycle_controller.dart';
 import 'package:forge/features/missions/presentation/providers/mission_lifecycle_state.dart';
+import 'package:forge/features/missions/presentation/providers/resolved_mission_instance_controller.dart';
 import 'package:forge/shared/widgets/forge_button.dart';
 import 'package:go_router/go_router.dart';
 
@@ -68,12 +69,18 @@ MissionAggregate _aggregateWith(
 void main() {
   Widget wrap(MissionPreview mission, {List<Override> overrides = const []}) {
     return ProviderScope(
-      overrides: overrides,
+      overrides: [
+        // Keeps AiMissionInsightPanel a no-op in these pre-existing tests,
+        // which don't set up the resolved-mission-instance/secure-storage
+        // provider chain the AI insight panel would otherwise need.
+        resolvedMissionInstanceProvider.overrideWithValue(null),
+        ...overrides,
+      ],
       child: MaterialApp(
         theme: ForgeTheme.dark(),
         home: Scaffold(
           body: SingleChildScrollView(
-            child: TodayMissionCard(mission: mission),
+            child: TodayMissionCard(mission: mission, displayName: 'Test User'),
           ),
         ),
       ),
@@ -166,6 +173,7 @@ void main() {
             body: SingleChildScrollView(
               child: TodayMissionCard(
                 mission: missionWith(MissionStatus.viewed),
+                displayName: 'Test User',
               ),
             ),
           ),
@@ -181,6 +189,7 @@ void main() {
 
     await tester.pumpWidget(
       ProviderScope(
+        overrides: [resolvedMissionInstanceProvider.overrideWithValue(null)],
         child: MaterialApp.router(
           theme: ForgeTheme.dark(),
           routerConfig: router,
@@ -210,6 +219,7 @@ void main() {
               body: SingleChildScrollView(
                 child: TodayMissionCard(
                   mission: missionWith(MissionStatus.notStarted),
+                  displayName: 'Test User',
                 ),
               ),
             ),
@@ -255,6 +265,7 @@ void main() {
         missionLifecycleControllerProvider.overrideWith(
           () => _FixedLifecycleController(MissionLifecycleReady(aggregate)),
         ),
+        resolvedMissionInstanceProvider.overrideWithValue(null),
       ],
     );
     addTearDown(container.dispose);
@@ -266,7 +277,10 @@ void main() {
           theme: ForgeTheme.dark(),
           home: Scaffold(
             body: SingleChildScrollView(
-              child: TodayMissionCard(mission: mission),
+              child: TodayMissionCard(
+                mission: mission,
+                displayName: 'Test User',
+              ),
             ),
           ),
         ),

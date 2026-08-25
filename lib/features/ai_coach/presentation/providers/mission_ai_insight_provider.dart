@@ -1,58 +1,40 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../missions/presentation/providers/resolved_mission_instance_controller.dart';
 import '../../domain/entities/ai_coach_response.dart';
 import 'ai_coach_providers.dart';
 
-/// Identity for a single mission's AI insight request — equality is by
-/// value so Riverpod's family caching naturally dedupes repeated builds
-/// for the same mission without a separate memoization layer.
-class MissionAiInsightParams {
-  const MissionAiInsightParams({
-    required this.displayName,
-    required this.missionTitle,
-    required this.missionCategory,
-    required this.missionDifficulty,
-  });
-
-  final String displayName;
-  final String missionTitle;
-  final String missionCategory;
-  final String missionDifficulty;
-
-  @override
-  bool operator ==(Object other) =>
-      other is MissionAiInsightParams &&
-      other.displayName == displayName &&
-      other.missionTitle == missionTitle &&
-      other.missionCategory == missionCategory &&
-      other.missionDifficulty == missionDifficulty;
-
-  @override
-  int get hashCode => Object.hash(
-    displayName,
-    missionTitle,
-    missionCategory,
-    missionDifficulty,
-  );
-}
-
-/// Roadmap Item 14 section 20 — the mission explanation panel's data
-/// source. [GetMissionExplanationUseCase] never throws (the underlying
+/// Roadmap Item 14B — the mission explanation panel's data source.
+/// Deliberately reads [resolvedMissionInstanceProvider] itself rather
+/// than accepting mission title/category/difficulty as caller-supplied
+/// parameters: that is Forge's one authoritative "today's mission"
+/// (Roadmap Item 13C) — a caller passing its own copy of those facts
+/// could theoretically drift from it, which this design makes
+/// structurally impossible. [displayName] is the only true input,
+/// since nothing mission-related can supply it.
+///
+/// [GetMissionExplanationUseCase] never throws (the underlying
 /// repository always resolves to either a real or a fallback response),
 /// so this provider's only failure mode is a genuine bug, not a normal
 /// "AI unavailable" case — that case is already a successful, safe
-/// [AiCoachResponse] from [AiCoachFallbackTemplates].
+/// [AiCoachResponse] from [AiCoachFallbackTemplates]. Resolves to `null`
+/// when there is no authoritative mission yet (loading/empty) — the
+/// widget renders nothing in that case, same as an empty
+/// [MissionExplanationPanel].
 final missionAiInsightProvider = FutureProvider.autoDispose
-    .family<AiCoachResponse, MissionAiInsightParams>((ref, params) {
+    .family<AiCoachResponse?, String>((ref, displayName) {
+      final resolved = ref.watch(resolvedMissionInstanceProvider);
+      if (resolved == null) return Future.value(null);
+
       final privacyLevel = ref.watch(aiPrivacyLevelProvider);
       final personalization = ref.watch(aiPersonalizationProfileProvider);
       final useCase = ref.watch(getMissionExplanationUseCaseProvider);
       return useCase(
         privacyLevel: privacyLevel,
-        displayName: params.displayName,
-        missionTitle: params.missionTitle,
-        missionCategory: params.missionCategory,
-        missionDifficulty: params.missionDifficulty,
+        displayName: displayName,
+        missionTitle: resolved.instance.title,
+        missionCategory: resolved.instance.category.name,
+        missionDifficulty: resolved.instance.resolvedDifficulty.name,
         personalization: personalization,
       );
     });

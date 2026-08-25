@@ -9,8 +9,12 @@ import 'package:forge/features/ai_coach/domain/entities/ai_coach_response.dart';
 import 'package:forge/features/ai_coach/domain/enums/ai_privacy_level.dart';
 import 'package:forge/features/ai_coach/presentation/providers/ai_coach_providers.dart';
 import 'package:forge/features/ai_coach/presentation/widgets/ai_mission_insight_panel.dart';
+import 'package:forge/features/missions/domain/entities/resolved_mission_instance.dart';
+import 'package:forge/features/missions/domain/enums/mission_instance_authority.dart';
+import 'package:forge/features/missions/presentation/providers/resolved_mission_instance_controller.dart';
 
 import '../../../support/fake_secure_key_value_store.dart';
+import '../../../support/mission_lifecycle_test_helpers.dart';
 
 class _StubClient implements AiCoachClient {
   _StubClient(this._response);
@@ -21,9 +25,15 @@ class _StubClient implements AiCoachClient {
 }
 
 void main() {
+  final resolved = ResolvedMissionInstance(
+    instance: testMissionInstance(),
+    authority: MissionInstanceAuthority.localOnly,
+  );
+
   Widget wrap({
     required AiPrivacyLevel privacyLevel,
     required AiCoachClient client,
+    required ResolvedMissionInstance? resolvedMission,
   }) {
     return ProviderScope(
       overrides: [
@@ -32,17 +42,11 @@ void main() {
         aiCoachCacheStoreProvider.overrideWithValue(
           AiCoachCacheStore(FakeSecureKeyValueStore()),
         ),
+        resolvedMissionInstanceProvider.overrideWithValue(resolvedMission),
       ],
       child: MaterialApp(
         theme: ForgeTheme.dark(),
-        home: Scaffold(
-          body: const AiMissionInsightPanel(
-            displayName: 'Alex',
-            missionTitle: 'Morning run',
-            missionCategory: 'fitness',
-            missionDifficulty: 'medium',
-          ),
-        ),
+        home: const Scaffold(body: AiMissionInsightPanel(displayName: 'Alex')),
       ),
     );
   }
@@ -52,6 +56,7 @@ void main() {
       wrap(
         privacyLevel: AiPrivacyLevel.disabled,
         client: _StubClient(AiCoachResponse.local('should never show')),
+        resolvedMission: resolved,
       ),
     );
     await tester.pump();
@@ -60,11 +65,27 @@ void main() {
     expect(find.byType(AiMissionInsightPanel), findsOneWidget);
   });
 
+  testWidgets('renders nothing when there is no authoritative mission yet', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      wrap(
+        privacyLevel: AiPrivacyLevel.fullContext,
+        client: _StubClient(AiCoachResponse.local('should never show')),
+        resolvedMission: null,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('should never show'), findsNothing);
+  });
+
   testWidgets('shows the AI message once resolved', (tester) async {
     await tester.pumpWidget(
       wrap(
         privacyLevel: AiPrivacyLevel.fullContext,
         client: _StubClient(AiCoachResponse.local('this fits your pace today')),
+        resolvedMission: resolved,
       ),
     );
     await tester.pumpAndSettle();
@@ -72,15 +93,20 @@ void main() {
     expect(find.text('this fits your pace today'), findsOneWidget);
   });
 
-  testWidgets('shows a loading indicator before the response resolves', (
+  testWidgets('renders nothing while the response is still resolving', (
     tester,
   ) async {
     await tester.pumpWidget(
       wrap(
         privacyLevel: AiPrivacyLevel.fullContext,
         client: _StubClient(AiCoachResponse.local('done')),
+        resolvedMission: resolved,
       ),
     );
-    expect(find.text('Thinking…'), findsOneWidget);
+    // No pumpAndSettle here — the fallback repository call hasn't
+    // resolved yet, and this widget must never show a loading state
+    // that could hold up the rest of the card around it.
+    expect(find.text('done'), findsNothing);
+    expect(find.byType(SizedBox), findsWidgets);
   });
 }
