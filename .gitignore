@@ -95,5 +95,13 @@ supabase/.temp/
 
 # Golden-test failure output (flutter test writes these next to goldens/
 # only when a golden comparison fails — never the approved images
-# themselves, which live in goldens/ and stay tracked).
-**/failures/
+# themselves, which live in goldens/ and stay tracked). Scoped to the
+# actual golden-test layout, not a bare **/failures/ — that wildcard
+# previously also swallowed lib/features/ai_coach/domain/failures/ (a
+# legitimate domain "failure type" directory, unrelated to golden
+# tests), silently keeping ai_coach_failure.dart untracked for an
+# entire branch's worth of commits without ever showing up in `git
+# status` (Roadmap Item 14 integration checkpoint, discovered via a
+# clean-clone CI failure that a locally-still-present-but-ignored file
+# had been masking).
+test/features/*/golden/failures/
