@@ -237,3 +237,55 @@ until it did. All 18 baselines have been regenerated against the fixed,
 deterministic font setup and now show the actual intended Forge
 typography; every changed image was reviewed individually before being
 accepted (see the Item 13B/13C PR description for the review notes).
+
+## Notifications (Roadmap Item 15)
+
+`lib/features/notifications/` splits by the same CLIENT OWNED /
+SERVER AUTHORITATIVE line as [Client/server trust
+boundary](#clientserver-trust-boundary): Daily Mission, Daily
+Transmission, and Mission Follow-up reminders are computed live from
+providers the client already treats as authoritative
+(`resolvedMissionInstanceProvider`, `MissionLifecycleController`) and
+never persisted server-side; Achievement Unlock, Level-up, Week
+Result, Season Result, and Weekly Recap are rows in the `notifications`
+table, written exclusively by `forge_create_notification()` inside the
+same transaction as the fact they describe (`forge_submit_mission`,
+`forge_finalize_season_week`, `forge_finalize_season`) — never
+client-inserted, never inferred client-side ahead of server
+confirmation. `NotificationInboxController` merges both sources into
+one list, filtered through `NotificationPreferences.allows()` before
+it ever reaches the UI.
+
+Delivery is in-app inbox only this pass, not OS/remote push — no
+`flutter_local_notifications`, no FCM/APNs/web push. This was a
+deliberate scope decision (the spec's own priority ordering places a
+working domain/persistence/inbox/preferences layer ahead of any push
+channel, and a new provider/paid plan is explicitly a stop-and-report
+condition, not something to add unprompted) rather than an oversight;
+see `NotificationInboxController`'s doc comment for how quiet hours
+relates to this (it gates the three client-owned reminder types at
+creation time — the one place they could otherwise interrupt the user
+— and currently has nothing further to gate for server-authoritative
+rows, since the pull-based inbox has no interrupt channel to defer).
+
+**Platform behavior** — the three platforms this repo actually
+targets (`android/`, `web/`, `windows/`; no `ios/`/`macos`/`linux`
+directory exists):
+
+- **Android**: full behavior. `flutter_secure_storage` (backing
+  `LocalReminderStore`, `NotificationPreferencesController`'s
+  bootstrap-before-load, and every other client-owned key/value need
+  in this app) uses the Android Keystore.
+- **Windows**: full behavior. `flutter_secure_storage` uses Windows
+  Credential Manager (DPAPI-backed). No further Windows-specific
+  handling was needed for this feature.
+- **Web**: full behavior for everything actually implemented (inbox,
+  preferences, deep links, quiet hours). `flutter_secure_storage`'s
+  web backend persists into the browser's own storage rather than a
+  real OS keystore — a pre-existing characteristic of every other
+  secure-storage use in this app (auth session, onboarding flag),
+  not something Item 15 introduces or changes. OS/remote push is not
+  implemented on any platform this pass, so there is no push-specific
+  web capability (Notification API permission, service worker) to
+  degrade — the gap is uniform across all three targets, not a
+  web-specific limitation.

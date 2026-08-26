@@ -117,6 +117,16 @@ begin
   end if;
   raise notice 'PASS: repeated season finalization is idempotent (no duplicate season_results row)';
 
+  -- Roadmap Item 15: the same idempotent re-run must not have
+  -- duplicated the season_result notification either.
+  select count(*) into written from public.notifications
+  where user_id = user_full and type = 'season_result'
+    and dedup_key = 'season_result:' || user_full::text || ':' || v_season_id::text;
+  if written <> 1 then
+    raise exception 'FAIL: expected exactly 1 season_result notification after 2 finalize runs, got %', written;
+  end if;
+  raise notice 'PASS: repeated season finalization does not duplicate the season_result notification';
+
   -- (4) Authorization: a normal authenticated user cannot call this.
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', user_full::text, 'role', 'authenticated')::text, true);

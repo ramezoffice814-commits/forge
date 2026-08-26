@@ -161,6 +161,23 @@ begin
   end if;
   raise notice 'PASS: repeated finalization is idempotent (no duplicate rows)';
 
+  -- Roadmap Item 15: the same idempotent re-run above must not have
+  -- duplicated the week_result/weekly_recap notifications it creates
+  -- alongside each competition_week_results row.
+  select count(*) into written from public.notifications
+  where user_id = user_top and type = 'week_result'
+    and dedup_key = 'week_result:' || user_top::text || ':' || v_season_id::text || ':1';
+  if written <> 1 then
+    raise exception 'FAIL: expected exactly 1 week_result notification after 2 finalize runs, got %', written;
+  end if;
+  select count(*) into written from public.notifications
+  where user_id = user_top and type = 'weekly_recap'
+    and dedup_key = 'weekly_recap:' || user_top::text || ':' || v_season_id::text || ':1';
+  if written <> 1 then
+    raise exception 'FAIL: expected exactly 1 weekly_recap notification after 2 finalize runs, got %', written;
+  end if;
+  raise notice 'PASS: repeated finalization does not duplicate week_result/weekly_recap notifications';
+
   -- Authorization: a normal authenticated user cannot call this at all.
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', user_top::text, 'role', 'authenticated')::text, true);
