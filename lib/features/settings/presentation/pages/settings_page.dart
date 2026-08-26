@@ -5,6 +5,7 @@ import '../../../../shared/widgets/forge_card.dart';
 import '../../../../shared/widgets/forge_scaffold.dart';
 import '../../../ai_coach/presentation/widgets/ai_privacy_settings_tile.dart';
 import '../../../notifications/presentation/widgets/notification_settings_tile.dart';
+import '../../../notifications/presentation/widgets/os_notification_settings_tile.dart';
 import '../widgets/settings_about_section.dart';
 import '../widgets/settings_accessibility_section.dart';
 import '../widgets/settings_account_section.dart';
@@ -48,7 +49,11 @@ class SettingsPage extends StatelessWidget {
             SizedBox(height: tokens.spacing.space3),
             const ForgeCard(
               elevation: ForgeCardElevation.md,
-              children: [NotificationSettingsTile()],
+              children: [
+                NotificationSettingsTile(),
+                Divider(),
+                OsNotificationSettingsTile(),
+              ],
             ),
             SizedBox(height: tokens.spacing.space3),
             const ForgeCard(

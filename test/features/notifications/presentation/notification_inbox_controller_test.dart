@@ -1,9 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge/core/storage/secure_key_value_store.dart';
+import 'package:forge/features/auth/presentation/auth_state.dart';
 import 'package:forge/features/auth/presentation/auth_state_notifier.dart';
 import 'package:forge/features/missions/presentation/providers/mission_lifecycle_controller.dart';
 import 'package:forge/features/missions/presentation/providers/resolved_mission_instance_controller.dart';
+import 'package:forge/features/notifications/data/local_notification/local_notification_scheduler.dart';
 import 'package:forge/features/notifications/data/mock/mock_notification_repository.dart';
 import 'package:forge/features/notifications/domain/entities/forge_notification.dart';
 import 'package:forge/features/notifications/domain/entities/notification_preferences.dart';
@@ -13,8 +15,10 @@ import 'package:forge/features/notifications/presentation/providers/notification
 import 'package:forge/features/notifications/presentation/providers/notification_inbox_state.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_preferences_controller.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_providers.dart';
+import 'package:forge/features/onboarding/presentation/onboarding_status_notifier.dart';
 
 import '../../../support/fake_auth_overrides.dart';
+import '../../../support/fake_local_notification_service.dart';
 import '../../../support/fake_secure_key_value_store.dart';
 
 /// Wraps a real [MockNotificationRepository] but can be toggled to throw
@@ -65,10 +69,20 @@ ForgeNotification _serverNotification(
   );
 }
 
-List<Override> _baseOverrides(NotificationRepository repository) => [
-  ...authenticatedTestOverrides(),
+List<Override> _baseOverrides(
+  NotificationRepository repository, {
+  FakeLocalNotificationService? localNotificationService,
+  AuthStateNotifier Function()? authNotifierFactory,
+}) => [
+  authStateNotifierProvider.overrideWith(
+    authNotifierFactory ?? FakeAuthenticatedNotifier.new,
+  ),
+  onboardingStatusProvider.overrideWith(FakeCompletedOnboardingNotifier.new),
   secureKeyValueStoreProvider.overrideWithValue(FakeSecureKeyValueStore()),
   notificationRepositoryProvider.overrideWithValue(repository),
+  localNotificationServiceProvider.overrideWithValue(
+    localNotificationService ?? FakeLocalNotificationService(),
+  ),
 ];
 
 Future<String> _readyMissionInstanceId(ProviderContainer container) async {
@@ -442,6 +456,135 @@ void main() {
         state.notifications.firstWhere((n) => n.id == 'lvl-1').isRead,
         isTrue,
       );
+    });
+  });
+
+  group('Roadmap Item 17: OS-level local notifications', () {
+    test('a due daily-mission reminder is mirrored to the OS via '
+        'showNow, using the exact same eligibility LocalReminderEngine '
+        'already computed for the in-app inbox', () async {
+      final localNotificationService = FakeLocalNotificationService();
+      final container = ProviderContainer(
+        overrides: _baseOverrides(
+          MockNotificationRepository(),
+          localNotificationService: localNotificationService,
+        ),
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(resolvedMissionInstanceControllerProvider.notifier)
+          .ready;
+      await container.read(notificationInboxControllerProvider.notifier).ready;
+
+      expect(localNotificationService.shown, isNotEmpty);
+    });
+
+    test('client-owned local reminders still get mirrored to the OS even '
+        'when the server fetch fails — offline behavior must not depend '
+        'on backend connectivity (spec section 15)', () async {
+      final localNotificationService = FakeLocalNotificationService();
+      final repository = _FlakyNotificationRepository(
+        MockNotificationRepository(),
+      )..offline = true;
+      final container = ProviderContainer(
+        overrides: _baseOverrides(
+          repository,
+          localNotificationService: localNotificationService,
+        ),
+      );
+      addTearDown(container.dispose);
+
+      await container
+          .read(resolvedMissionInstanceControllerProvider.notifier)
+          .ready;
+      await container.read(notificationInboxControllerProvider.notifier).ready;
+
+      // The inbox state still surfaces the retryable error (unchanged
+      // existing contract)...
+      expect(
+        container.read(notificationInboxControllerProvider),
+        isA<NotificationInboxError>(),
+      );
+      // ...but the OS-level reminder still fired regardless.
+      expect(localNotificationService.shown, isNotEmpty);
+    });
+
+    test('signing out cancels every locally-scheduled OS reminder — '
+        'account-switch isolation (spec section 14)', () async {
+      final localNotificationService = FakeLocalNotificationService();
+      final authNotifier = FakeAuthenticatedNotifier();
+      final container = ProviderContainer(
+        overrides: _baseOverrides(
+          MockNotificationRepository(),
+          localNotificationService: localNotificationService,
+          authNotifierFactory: () => authNotifier,
+        ),
+      );
+      addTearDown(container.dispose);
+
+      await container.read(notificationInboxControllerProvider.notifier).ready;
+      expect(localNotificationService.cancelAllCalled, isFalse);
+      expect(
+        container.read(authStateNotifierProvider).status,
+        AuthStatus.authenticated,
+      );
+
+      await authNotifier.signOut();
+      expect(
+        container.read(authStateNotifierProvider).status,
+        AuthStatus.unauthenticated,
+        reason: 'signOut() itself must have flipped the auth status',
+      );
+      // The rebuild this triggers, and the cancel call inside it, are
+      // both async with no dedicated signal of their own to await —
+      // poll a bounded number of microtask turns rather than assume a
+      // fixed delay is enough (same technique already used above for
+      // the preference-change reactive-rebuild test).
+      var cancelled = false;
+      for (var i = 0; i < 50; i++) {
+        await Future<void>.delayed(Duration.zero);
+        // Riverpod only recomputes a provider nothing is actively
+        // watching once something reads it again — re-reading here
+        // forces NotificationInboxController.build() to actually run
+        // for the now-unauthenticated status if it hasn't already.
+        container.read(notificationInboxControllerProvider);
+        if (localNotificationService.cancelAllCalled) {
+          cancelled = true;
+          break;
+        }
+      }
+
+      expect(
+        cancelled,
+        isTrue,
+        reason: 'cancelAll was never called after sign-out',
+      );
+    });
+
+    test('a mission follow-up is genuinely scheduled in advance (not '
+        'just mirrored via showNow) once the mission is accepted', () async {
+      final localNotificationService = FakeLocalNotificationService();
+      final repository = MockNotificationRepository();
+      final container = ProviderContainer(
+        overrides: _baseOverrides(
+          repository,
+          localNotificationService: localNotificationService,
+        ),
+      );
+      addTearDown(container.dispose);
+
+      final instanceId = await _readyMissionInstanceId(container);
+      await container
+          .read(missionLifecycleControllerProvider(instanceId).notifier)
+          .accept();
+
+      await container.read(notificationInboxControllerProvider.notifier).ready;
+
+      final id = LocalNotificationScheduler.stableId(
+        'mission_followup:$instanceId',
+      );
+      expect(localNotificationService.scheduled.containsKey(id), isTrue);
     });
   });
 }

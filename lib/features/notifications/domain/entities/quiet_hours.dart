@@ -46,4 +46,21 @@ class QuietHours {
     }
     return minuteOfDay >= startMinute || minuteOfDay < endMinute;
   }
+
+  /// [candidate] unchanged if it doesn't fall inside quiet hours;
+  /// otherwise the next local instant quiet hours end (Roadmap Item 17
+  /// section 9) — same calendar day if `endMinute` hasn't passed yet on
+  /// [candidate]'s own day, otherwise the following day. Pure and
+  /// deterministic like [isQuietAt]; callers own actually scheduling
+  /// the returned instant.
+  DateTime nextEligibleTime(DateTime candidate) {
+    if (!isQuietAt(candidate)) return candidate;
+    final endOfCandidateDay = DateTime(
+      candidate.year,
+      candidate.month,
+      candidate.day,
+    ).add(Duration(minutes: endMinute));
+    if (endOfCandidateDay.isAfter(candidate)) return endOfCandidateDay;
+    return endOfCandidateDay.add(const Duration(days: 1));
+  }
 }
