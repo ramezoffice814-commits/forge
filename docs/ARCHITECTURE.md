@@ -21,6 +21,12 @@ explicitly (the mission engine's policies, the progression engine's
 policies, the mission-lifecycle aggregate) — domain code has no Flutter
 import at all, so it's testable as plain Dart with no widget tree.
 
+`lib/features/settings/` is a deliberate exception: presentation-only, no
+`domain/`/`data/` of its own. It's a pure aggregator screen that reuses
+other features' existing providers/widgets/storage (AI privacy, notification
+preferences, auth) rather than introducing a second, competing preference
+model for anything it displays.
+
 Cross-cutting infrastructure lives outside any single feature:
 
 - `lib/core/` — routing (`go_router` config, auth-redirect policy, app

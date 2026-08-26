@@ -8,16 +8,15 @@ import '../../../shared/widgets/forge_button.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_loading_state.dart';
 import '../../../shared/widgets/forge_scaffold.dart';
-import '../../ai_coach/presentation/widgets/ai_privacy_settings_tile.dart';
 import '../../competition/presentation/widgets/profile_competition_summary.dart';
-import '../../notifications/presentation/widgets/notification_settings_tile.dart';
 import '../../progression/presentation/providers/progression_controller.dart';
 import '../../progression/presentation/providers/progression_state.dart';
 import '../../progression/presentation/widgets/level_badge.dart';
 
-/// Profile tab root. Shows only the progression summary this phase adds
-/// (level, title, achievement count) — full profile editing (avatar,
-/// settings list) lands in a later roadmap item.
+/// Profile tab root. Shows the progression summary, competition
+/// snapshot, and a link into Social. Account controls, AI privacy, and
+/// notification preferences moved to [SettingsPage] (Roadmap Item 16) —
+/// Profile is about *this account's progress*, not app configuration.
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
 
@@ -28,6 +27,13 @@ class ProfilePage extends ConsumerWidget {
 
     return ForgeScaffold(
       appBarTitle: 'Profile',
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.settings_outlined),
+          tooltip: 'Settings',
+          onPressed: () => context.pushNamed(AppRouteNames.settings),
+        ),
+      ],
       body: switch (state) {
         ProgressionReady ready => SingleChildScrollView(
           padding: EdgeInsets.all(tokens.spacing.space4),
@@ -81,16 +87,6 @@ class ProfilePage extends ConsumerWidget {
                     onPressed: () => context.goNamed(AppRouteNames.social),
                   ),
                 ],
-              ),
-              SizedBox(height: tokens.spacing.space3),
-              const ForgeCard(
-                elevation: ForgeCardElevation.md,
-                children: [NotificationSettingsTile()],
-              ),
-              SizedBox(height: tokens.spacing.space3),
-              const ForgeCard(
-                elevation: ForgeCardElevation.md,
-                children: [AiPrivacySettingsTile()],
               ),
             ],
           ),

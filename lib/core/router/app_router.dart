@@ -14,6 +14,7 @@ import '../../features/notifications/presentation/pages/notification_inbox_page.
 import '../../features/onboarding/presentation/onboarding_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/progress/presentation/progress_page.dart';
+import '../../features/settings/presentation/pages/settings_page.dart';
 import '../../features/social/presentation/pages/public_profile_page.dart';
 import '../../features/social/presentation/pages/social_page.dart';
 import 'app_routes.dart';
@@ -103,6 +104,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.notifications,
         name: AppRouteNames.notifications,
         builder: (context, state) => const NotificationInboxPage(),
+      ),
+      // Same reasoning again — see `SettingsPage`.
+      GoRoute(
+        path: AppRoutePaths.settings,
+        name: AppRouteNames.settings,
+        builder: (context, state) => const SettingsPage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

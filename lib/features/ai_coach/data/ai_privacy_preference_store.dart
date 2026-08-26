@@ -8,19 +8,27 @@ import '../domain/enums/ai_privacy_level.dart';
 /// (mirrors `LocalOnboardingRepository`'s exact shape) — no new storage
 /// subsystem. Deliberately narrow: this class stores and retrieves one
 /// enum value, nothing else.
+///
+/// Keyed by [userId] — found during Roadmap Item 16's account-switch
+/// audit: the original single, non-user-scoped key meant a second
+/// account signing in on the same device would silently inherit the
+/// first account's AI privacy choice (or overwrite it on save), exactly
+/// the class of bug already found and fixed for `LocalReminderStore` in
+/// Item 15. Matches `CachedMissionAssignmentStore`'s existing per-user
+/// key convention.
 class AiPrivacyPreferenceStore {
   const AiPrivacyPreferenceStore(this._store);
 
-  static const _key = 'forge.ai_coach.privacy_level';
-
   final SecureKeyValueStore _store;
 
-  /// `null` when nothing has been saved yet — callers should keep
-  /// whatever default they already have (currently
+  static String _key(String userId) => 'forge.ai_coach.privacy_level.$userId';
+
+  /// `null` when nothing has been saved yet for this user — callers
+  /// should keep whatever default they already have (currently
   /// [AiPrivacyLevel.limitedContext]) rather than treating this as
   /// [AiPrivacyLevel.disabled] or any other specific value.
-  Future<AiPrivacyLevel?> load() async {
-    final raw = await _store.read(_key);
+  Future<AiPrivacyLevel?> load(String userId) async {
+    final raw = await _store.read(_key(userId));
     if (raw == null) return null;
     for (final level in AiPrivacyLevel.values) {
       if (level.name == raw) return level;
@@ -28,7 +36,8 @@ class AiPrivacyPreferenceStore {
     return null;
   }
 
-  Future<void> save(AiPrivacyLevel level) => _store.write(_key, level.name);
+  Future<void> save(String userId, AiPrivacyLevel level) =>
+      _store.write(_key(userId), level.name);
 }
 
 final aiPrivacyPreferenceStoreProvider = Provider<AiPrivacyPreferenceStore>((
