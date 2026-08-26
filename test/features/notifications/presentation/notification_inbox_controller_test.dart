@@ -8,6 +8,7 @@ import 'package:forge/features/notifications/data/mock/mock_notification_reposit
 import 'package:forge/features/notifications/domain/entities/forge_notification.dart';
 import 'package:forge/features/notifications/domain/entities/notification_preferences.dart';
 import 'package:forge/features/notifications/domain/enums/forge_notification_type.dart';
+import 'package:forge/features/notifications/domain/repositories/notification_repository.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_inbox_controller.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_inbox_state.dart';
 import 'package:forge/features/notifications/presentation/providers/notification_preferences_controller.dart';
@@ -15,6 +16,39 @@ import 'package:forge/features/notifications/presentation/providers/notification
 
 import '../../../support/fake_auth_overrides.dart';
 import '../../../support/fake_secure_key_value_store.dart';
+
+/// Wraps a real [MockNotificationRepository] but can be toggled to throw
+/// on [fetchInbox] — the cheapest way to simulate "the device just went
+/// offline / a reconnect fetch failed" without inventing new sync
+/// infrastructure: [NotificationInboxController]'s own `_load()` already
+/// has a real catch path for exactly this (`state =
+/// NotificationInboxError(...)`), so this fake only needs to trigger it.
+class _FlakyNotificationRepository implements NotificationRepository {
+  _FlakyNotificationRepository(this._inner);
+
+  final MockNotificationRepository _inner;
+  bool offline = false;
+
+  @override
+  Future<List<ForgeNotification>> fetchInbox() {
+    if (offline) throw Exception('simulated offline: no network');
+    return _inner.fetchInbox();
+  }
+
+  @override
+  Future<void> markRead(String notificationId) =>
+      _inner.markRead(notificationId);
+
+  @override
+  Future<void> markAllRead() => _inner.markAllRead();
+
+  @override
+  Future<NotificationPreferences> getPreferences() => _inner.getPreferences();
+
+  @override
+  Future<void> updatePreferences(NotificationPreferences preferences) =>
+      _inner.updatePreferences(preferences);
+}
 
 ForgeNotification _serverNotification(
   String id,
@@ -31,7 +65,7 @@ ForgeNotification _serverNotification(
   );
 }
 
-List<Override> _baseOverrides(MockNotificationRepository repository) => [
+List<Override> _baseOverrides(NotificationRepository repository) => [
   ...authenticatedTestOverrides(),
   secureKeyValueStoreProvider.overrideWithValue(FakeSecureKeyValueStore()),
   notificationRepositoryProvider.overrideWithValue(repository),
@@ -282,5 +316,132 @@ void main() {
       isNotNull,
       reason: 'inbox was never re-filtered after the preference change',
     );
+  });
+
+  group('offline / reconnect', () {
+    test('a fetch failure (device offline) surfaces a retryable error '
+        'state, never a crash or a silently empty inbox', () async {
+      final repository = _FlakyNotificationRepository(
+        MockNotificationRepository(
+          seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+        ),
+      )..offline = true;
+      final container = ProviderContainer(
+        overrides: _baseOverrides(repository),
+      );
+      addTearDown(container.dispose);
+
+      await container.read(notificationInboxControllerProvider.notifier).ready;
+      expect(
+        container.read(notificationInboxControllerProvider),
+        isA<NotificationInboxError>(),
+      );
+    });
+
+    test(
+      'reconnecting (retrying after a failed fetch) recovers the real '
+      'cached-on-the-server notifications once the network is back',
+      () async {
+        // Two containers sharing the same underlying repository/store —
+        // the cleanest available way to simulate "the app reconnected"
+        // (a fresh session re-fetching against a backend whose state
+        // persisted the whole time) without fighting a bare
+        // ProviderContainer's own `invalidate` rebuild timing, which has
+        // no dedicated `ready` signal to await for a second load.
+        final inner = MockNotificationRepository(
+          seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+        );
+        final repository = _FlakyNotificationRepository(inner)..offline = true;
+
+        final offlineContainer = ProviderContainer(
+          overrides: _baseOverrides(repository),
+        );
+        await offlineContainer
+            .read(notificationInboxControllerProvider.notifier)
+            .ready;
+        expect(
+          offlineContainer.read(notificationInboxControllerProvider),
+          isA<NotificationInboxError>(),
+        );
+        offlineContainer.dispose();
+
+        repository.offline = false;
+        final onlineContainer = ProviderContainer(
+          overrides: _baseOverrides(repository),
+        );
+        addTearDown(onlineContainer.dispose);
+        await onlineContainer
+            .read(notificationInboxControllerProvider.notifier)
+            .ready;
+
+        final state =
+            onlineContainer.read(notificationInboxControllerProvider)
+                as NotificationInboxReady;
+        expect(state.notifications.any((n) => n.id == 'lvl-1'), isTrue);
+      },
+    );
+
+    test('reconnecting never duplicates a notification that was already '
+        'shown — a repeated load is idempotent, not additive', () async {
+      final inner = MockNotificationRepository(
+        seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+      );
+      final repository = _FlakyNotificationRepository(inner);
+
+      final first = ProviderContainer(overrides: _baseOverrides(repository));
+      await first.read(notificationInboxControllerProvider.notifier).ready;
+      first.dispose();
+
+      final second = ProviderContainer(overrides: _baseOverrides(repository));
+      addTearDown(second.dispose);
+      await second.read(notificationInboxControllerProvider.notifier).ready;
+
+      final state =
+          second.read(notificationInboxControllerProvider)
+              as NotificationInboxReady;
+      expect(state.notifications.where((n) => n.id == 'lvl-1').length, 1);
+    });
+
+    test('a read-state change survives a reconnect — the mark-read call '
+        'was already persisted server-side, so a fresh fetch after '
+        'coming back online reflects it correctly rather than reverting '
+        'to unread', () async {
+      final inner = MockNotificationRepository(
+        seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
+      );
+      final repository = _FlakyNotificationRepository(inner);
+
+      final firstSession = ProviderContainer(
+        overrides: _baseOverrides(repository),
+      );
+      await firstSession
+          .read(notificationInboxControllerProvider.notifier)
+          .ready;
+      final initial =
+          firstSession.read(notificationInboxControllerProvider)
+              as NotificationInboxReady;
+      await firstSession
+          .read(notificationInboxControllerProvider.notifier)
+          .markRead(initial.notifications.firstWhere((n) => n.id == 'lvl-1'));
+      firstSession.dispose();
+
+      // Simulate a full reconnect cycle: a fresh session re-fetches
+      // against the same backend, which already persisted the read.
+      final reconnectedSession = ProviderContainer(
+        overrides: _baseOverrides(repository),
+      );
+      addTearDown(reconnectedSession.dispose);
+      await reconnectedSession
+          .read(notificationInboxControllerProvider.notifier)
+          .ready;
+
+      final state =
+          reconnectedSession.read(notificationInboxControllerProvider)
+              as NotificationInboxReady;
+      expect(
+        state.notifications.firstWhere((n) => n.id == 'lvl-1').isRead,
+        isTrue,
+      );
+    });
   });
 }
