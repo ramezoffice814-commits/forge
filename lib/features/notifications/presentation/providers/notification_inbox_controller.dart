@@ -44,7 +44,14 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
     );
     if (authStatus != AuthStatus.authenticated) {
       // Nothing from a previous session survives a sign-out — the next
-      // build() (once a real sign-in happens) starts clean.
+      // build() (once a real sign-in happens) starts clean. Also cancels
+      // any OS-level reminders scheduled for whoever just signed out
+      // (Roadmap Item 17 section 14: account-switch isolation) — safe
+      // to call even when nothing is scheduled.
+      Future.microtask(
+        () =>
+            ref.read(localNotificationSchedulerProvider).cancelAllForSignOut(),
+      );
       return const NotificationInboxLoading();
     }
     // `ref.listen`, deliberately not `ref.watch`: a preference change
@@ -65,16 +72,42 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
   }
 
   Future<void> _load() async {
+    // The server fetch gets its own try/catch, deliberately separate
+    // from everything below: client-owned local reminders and their
+    // OS-level presentation (Roadmap Item 17) must keep working
+    // regardless of whether the server is reachable (spec section 15 —
+    // "do not require backend connectivity merely to fire a local
+    // reminder"), but a fetch failure must still surface the exact same
+    // retryable error state this already did before Item 17 (see the
+    // offline/reconnect tests) — never silently swallowed just because
+    // the local half succeeded.
+    List<ForgeNotification>? serverList;
+    Object? fetchError;
     try {
       final repository = ref.read(notificationRepositoryProvider);
-      final serverList = await repository.fetchInbox();
-      if (_disposed) return;
+      serverList = await repository.fetchInbox();
+    } catch (e) {
+      fetchError = e;
+    }
+    if (_disposed) return;
 
+    try {
       await ref.read(notificationPreferencesControllerProvider.notifier).ready;
       if (_disposed) return;
       final preferences = ref.read(notificationPreferencesControllerProvider);
       final localList = await _computeLocalReminders(preferences);
       if (_disposed) return;
+
+      await ref
+          .read(localNotificationSchedulerProvider)
+          .presentDueReminders(localList);
+
+      if (fetchError != null) {
+        state = const NotificationInboxError(
+          "Couldn't load notifications right now.",
+        );
+        return;
+      }
 
       // Category/master preferences are the single place they actually
       // take effect for server-authoritative rows (spec section 10) —
@@ -83,17 +116,13 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       //
       // Quiet hours are deliberately NOT applied here: they gate the
       // three client-owned reminder types at creation time in
-      // LocalReminderEngine (the one place they could otherwise
-      // interrupt the user, e.g. a future local push). Server-
-      // authoritative rows have no interrupt channel this pass — no OS
-      // push/local notification is implemented (in-app inbox only,
-      // spec section 14's own stated priority ordering) — and the inbox
-      // itself is pull-based: opening it is an explicit user action, not
-      // something quiet hours is meant to defer. If a push channel is
-      // added later, quiet hours must gate delivery there too.
+      // LocalReminderEngine. Server-authoritative rows aren't mirrored
+      // to an OS notification in this pass (Roadmap Item 17 report),
+      // and the inbox itself is pull-based: opening it is an explicit
+      // user action, not something quiet hours is meant to defer.
       final combined =
           [
-              ...serverList,
+              ...serverList!,
               ...localList,
             ].where((n) => preferences.allows(n.type)).toList()
             ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -185,6 +214,24 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
         await store.recordShown(userId, followup.dedupKey, now);
       }
     }
+
+    // Genuine future-dated OS scheduling for Mission Follow-up —
+    // distinct from the "is it due right now" live check above (spec
+    // section 8/9: real advance scheduling, deferred out of quiet
+    // hours). Runs every time this recomputes (sign-in, dashboard view,
+    // preference change), so accepting/completing a mission naturally
+    // reschedules or cancels the prior OS alarm via its stable id.
+    await ref
+        .read(localNotificationSchedulerProvider)
+        .syncMissionFollowup(
+          missionInstanceId: resolved.instance.instanceId,
+          missionTitle: resolved.instance.title,
+          acceptedAt: isAcceptedOrLater ? acceptedAt : null,
+          missionCompleted: isCompleted,
+          categoryEnabled: preferences.missionFollowupEnabled,
+          masterEnabled: preferences.masterEnabled,
+          quietHours: preferences.quietHours,
+        );
 
     return results;
   }

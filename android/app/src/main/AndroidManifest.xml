@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Roadmap Item 17: runtime-requested on Android 13+ only via
+         PluginLocalNotificationService.requestPermission(), never
+         auto-granted — declaring it here is required for the request
+         API to exist at all, it does not itself show anything. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="forge"
         android:name="${applicationName}"
