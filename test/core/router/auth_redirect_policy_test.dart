@@ -70,6 +70,33 @@ void main() {
     },
   );
 
+  testWidgets('unauthenticated visiting /settings (Roadmap Item 16) is sent to '
+      'sign-in with the destination preserved — the same authenticated-only '
+      'gating every other protected route already gets, not a special case', (
+    tester,
+  ) async {
+    final harness = await pump(
+      tester,
+      overrides: unauthenticatedTestOverrides(onboardingCompleted: true),
+    );
+
+    harness.router.go('/settings');
+    await tester.pumpAndSettle();
+
+    expect(harness.location, '/sign-in?redirect=%2Fsettings');
+  });
+
+  testWidgets('authenticated user can reach /settings directly', (
+    tester,
+  ) async {
+    final harness = await pump(tester, overrides: authenticatedTestOverrides());
+
+    harness.router.go('/settings');
+    await tester.pumpAndSettle();
+
+    expect(harness.location, '/settings');
+  });
+
   testWidgets('authenticated user visiting sign-in is bounced to home', (
     tester,
   ) async {

@@ -41,6 +41,9 @@ abstract final class AppRoutePaths {
   // `dailyTransmission`/`social` — see `NotificationInboxPage`.
   static const notifications = '/notifications';
 
+  // Same reasoning again — see `SettingsPage`.
+  static const settings = '/settings';
+
   static const protected = [
     home,
     rank,
@@ -50,6 +53,7 @@ abstract final class AppRoutePaths {
     dailyTransmission,
     social,
     notifications,
+    settings,
   ];
   static const publicAuthRoutes = [signIn, signUp, forgotPassword];
 }
@@ -73,4 +77,5 @@ abstract final class AppRouteNames {
   static const social = 'social';
   static const publicProfile = 'public-profile';
   static const notifications = 'notifications';
+  static const settings = 'settings';
 }

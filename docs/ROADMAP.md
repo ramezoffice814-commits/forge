@@ -244,9 +244,43 @@ Coach provider), and — via the system-wide audit above — that the
 client cannot forge, mutate, or read across users for any
 notification or reward-authority row anywhere in the schema.
 
+### 16 — Settings, Account Controls & Preferences Center
+A real `/settings` screen (`lib/features/settings/`) aggregating existing
+preference surfaces rather than duplicating them: account identity summary
+with sign-out (the app's first sign-out UI — none existed before this
+item) and a delete-account control wired to the pre-existing
+`DeleteAccountRequestUseCase` placeholder (which honestly surfaces "not
+available yet" rather than faking success, since no deletion backend
+exists), the existing AI privacy tile and notification preferences tile
+(quiet hours included) moved unchanged from Profile, and a read-only
+accessibility status row reflecting `MediaQuery.disableAnimations` (no new
+override toggle — the OS setting is the only source of truth). Profile is
+now progress-focused only, with a settings icon routing to the new
+authenticated-only `/settings` route.
+
+Auditing account-switch isolation for this item surfaced the same class of
+bug already found and fixed for `LocalReminderStore` in Item 15:
+`AiPrivacyPreferenceStore` used one non-user-scoped local storage key, so a
+second account signing in on the same device would silently inherit (or
+overwrite) the first account's AI privacy choice. Fixed by keying the
+store per user ID and making `aiPrivacyBootstrapProvider` reactive to auth
+status (resets to the safe default on sign-out, reloads fresh per user on
+sign-in) — which in turn surfaced a genuine Riverpod bug in that same fix
+(writing to another provider synchronously during the unauthenticated
+branch's own initial build threw "Providers are not allowed to modify
+other providers during their initialization"), caught by the new
+account-switch regression test before it could reach production, and
+fixed with an explicit yield.
+
+**Classification: COMPLETE.** No theme, locale, or in-app text-size
+support exists in the app, so Settings deliberately doesn't offer toggles
+for them (would have no real effect). No server-backed preference or
+schema changed in this item — only a local storage key scheme — so Deno,
+SQL, and staging verification are not applicable here.
+
 ## Next
 
-Item 16 has not yet been scoped.
+Item 17 has not yet been scoped.
 
 ## Further Out
 
@@ -257,6 +291,12 @@ Named as future direction, not committed scope or timelines:
 - OS-level local push and remote push notifications (FCM/APNs/web
   push) — Item 15 shipped in-app inbox only.
 - Optional re-engagement notifications (Item 15's type H).
+- Real account deletion, once a backend deletion flow exists (Item 16
+  intentionally left the existing honest placeholder in place rather than
+  implementing destructive deletion without a security review).
+- Theme (light/dark) and locale/i18n support, if ever prioritized —
+  neither exists today, so Item 16's Settings screen has nothing to
+  surface for them yet.
 - Monetization.
 - Production deployment (only after Item 13 is complete and reviewed).
 - iOS/macOS/Linux platform targets (only Android, Web, and Windows exist
