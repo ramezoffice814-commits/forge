@@ -16,7 +16,11 @@ import 'package:forge/features/notifications/presentation/providers/notification
 import '../../../support/fake_auth_overrides.dart';
 import '../../../support/fake_secure_key_value_store.dart';
 
-ForgeNotification _serverNotification(String id, DateTime createdAt, {DateTime? readAt}) {
+ForgeNotification _serverNotification(
+  String id,
+  DateTime createdAt, {
+  DateTime? readAt,
+}) {
   return ForgeNotification(
     id: id,
     type: ForgeNotificationType.levelUp,
@@ -34,7 +38,9 @@ List<Override> _baseOverrides(MockNotificationRepository repository) => [
 ];
 
 Future<String> _readyMissionInstanceId(ProviderContainer container) async {
-  await container.read(resolvedMissionInstanceControllerProvider.notifier).ready;
+  await container
+      .read(resolvedMissionInstanceControllerProvider.notifier)
+      .ready;
   return container.read(resolvedMissionInstanceProvider)!.instance.instanceId;
 }
 
@@ -44,14 +50,21 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         authStateNotifierProvider.overrideWith(FakeUnauthenticatedNotifier.new),
-        secureKeyValueStoreProvider.overrideWithValue(FakeSecureKeyValueStore()),
-        notificationRepositoryProvider.overrideWithValue(MockNotificationRepository()),
+        secureKeyValueStoreProvider.overrideWithValue(
+          FakeSecureKeyValueStore(),
+        ),
+        notificationRepositoryProvider.overrideWithValue(
+          MockNotificationRepository(),
+        ),
       ],
     );
     addTearDown(container.dispose);
 
     await Future<void>.delayed(Duration.zero);
-    expect(container.read(notificationInboxControllerProvider), isA<NotificationInboxLoading>());
+    expect(
+      container.read(notificationInboxControllerProvider),
+      isA<NotificationInboxLoading>(),
+    );
   });
 
   test('merges server-authoritative notifications with client-owned local '
@@ -65,9 +78,13 @@ void main() {
     // The inbox controller's own `_load()` reads `resolvedMissionInstanceProvider`
     // synchronously — it must already be resolved (not mid-flight) for the
     // client-owned local reminder to be computed rather than skipped.
-    await container.read(resolvedMissionInstanceControllerProvider.notifier).ready;
+    await container
+        .read(resolvedMissionInstanceControllerProvider.notifier)
+        .ready;
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
 
     // The mock mission starts freshly assigned (not yet accepted), so the
     // daily-mission local reminder is expected to fire and, being
@@ -86,14 +103,25 @@ void main() {
     addTearDown(container.dispose);
 
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    var state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
-    final serverNotification = state.notifications.firstWhere((n) => n.id == 'lvl-1');
+    var state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
+    final serverNotification = state.notifications.firstWhere(
+      (n) => n.id == 'lvl-1',
+    );
     expect(serverNotification.isRead, isFalse);
 
-    await container.read(notificationInboxControllerProvider.notifier).markRead(serverNotification);
+    await container
+        .read(notificationInboxControllerProvider.notifier)
+        .markRead(serverNotification);
 
-    state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
-    expect(state.notifications.firstWhere((n) => n.id == 'lvl-1').isRead, isTrue);
+    state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
+    expect(
+      state.notifications.firstWhere((n) => n.id == 'lvl-1').isRead,
+      isTrue,
+    );
 
     final persisted = await repository.fetchInbox();
     expect(persisted.single.isRead, isTrue);
@@ -111,9 +139,13 @@ void main() {
     addTearDown(container.dispose);
 
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    await container.read(notificationInboxControllerProvider.notifier).markAllRead();
+    await container
+        .read(notificationInboxControllerProvider.notifier)
+        .markAllRead();
 
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
     expect(state.notifications.every((n) => n.isRead), isTrue);
 
     final persisted = await repository.fetchInbox();
@@ -125,15 +157,23 @@ void main() {
     final repository = MockNotificationRepository(
       seed: [
         _serverNotification('lvl-1', DateTime(2020, 1, 1)),
-        _serverNotification('lvl-2', DateTime(2020, 1, 2), readAt: DateTime(2020, 1, 3)),
+        _serverNotification(
+          'lvl-2',
+          DateTime(2020, 1, 2),
+          readAt: DateTime(2020, 1, 3),
+        ),
       ],
     );
     final container = ProviderContainer(overrides: _baseOverrides(repository));
     addTearDown(container.dispose);
 
-    await container.read(resolvedMissionInstanceControllerProvider.notifier).ready;
+    await container
+        .read(resolvedMissionInstanceControllerProvider.notifier)
+        .ready;
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
 
     // 1 unread server row (lvl-1) + the daily-mission and daily-transmission
     // local reminders (fresh, unaccepted mission, neither shown before) = 3.
@@ -147,12 +187,21 @@ void main() {
     addTearDown(container.dispose);
 
     final instanceId = await _readyMissionInstanceId(container);
-    await container.read(missionLifecycleControllerProvider(instanceId).notifier).accept();
+    await container
+        .read(missionLifecycleControllerProvider(instanceId).notifier)
+        .accept();
 
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
 
-    expect(state.notifications.any((n) => n.type == ForgeNotificationType.dailyMission), isFalse);
+    expect(
+      state.notifications.any(
+        (n) => n.type == ForgeNotificationType.dailyMission,
+      ),
+      isFalse,
+    );
   });
 
   test('a disabled category is filtered out of the inbox entirely — a '
@@ -161,12 +210,16 @@ void main() {
     final repository = MockNotificationRepository(
       seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
     );
-    await repository.updatePreferences(const NotificationPreferences(progressionEnabled: false));
+    await repository.updatePreferences(
+      const NotificationPreferences(progressionEnabled: false),
+    );
     final container = ProviderContainer(overrides: _baseOverrides(repository));
     addTearDown(container.dispose);
 
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
 
     expect(state.notifications.any((n) => n.id == 'lvl-1'), isFalse);
   });
@@ -176,12 +229,16 @@ void main() {
     final repository = MockNotificationRepository(
       seed: [_serverNotification('lvl-1', DateTime(2020, 1, 1))],
     );
-    await repository.updatePreferences(const NotificationPreferences(masterEnabled: false));
+    await repository.updatePreferences(
+      const NotificationPreferences(masterEnabled: false),
+    );
     final container = ProviderContainer(overrides: _baseOverrides(repository));
     addTearDown(container.dispose);
 
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
 
     expect(state.notifications, isEmpty);
   });
@@ -196,7 +253,9 @@ void main() {
     addTearDown(container.dispose);
 
     await container.read(notificationInboxControllerProvider.notifier).ready;
-    var state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    var state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
     expect(state.notifications.any((n) => n.id == 'lvl-1'), isTrue);
 
     await container
@@ -211,12 +270,17 @@ void main() {
     for (var i = 0; i < 50; i++) {
       await Future<void>.delayed(Duration.zero);
       final current = container.read(notificationInboxControllerProvider);
-      if (current is NotificationInboxReady && !current.notifications.any((n) => n.id == 'lvl-1')) {
+      if (current is NotificationInboxReady &&
+          !current.notifications.any((n) => n.id == 'lvl-1')) {
         refiltered = current;
         break;
       }
     }
 
-    expect(refiltered, isNotNull, reason: 'inbox was never re-filtered after the preference change');
+    expect(
+      refiltered,
+      isNotNull,
+      reason: 'inbox was never re-filtered after the preference change',
+    );
   });
 }

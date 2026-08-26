@@ -8,7 +8,11 @@ import '../../domain/services/notification_copy.dart';
 /// section 11) — an accent dot for unread, dimmed text for read; no
 /// separate "new" badge system to keep in sync with it.
 class NotificationTile extends StatelessWidget {
-  const NotificationTile({super.key, required this.notification, required this.onTap});
+  const NotificationTile({
+    super.key,
+    required this.notification,
+    required this.onTap,
+  });
 
   final ForgeNotification notification;
   final VoidCallback onTap;
@@ -50,22 +54,24 @@ class NotificationTile extends StatelessWidget {
                       copy.title,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: isRead ? FontWeight.w400 : FontWeight.w600,
-                        color: isRead ? tokens.text.withValues(alpha: 0.7) : tokens.text,
+                        color: isRead
+                            ? tokens.text.withValues(alpha: 0.7)
+                            : tokens.text,
                       ),
                     ),
                     SizedBox(height: tokens.spacing.space1 / 2),
                     Text(
                       copy.body,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.text.withValues(alpha: 0.6)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: tokens.text.withValues(alpha: 0.6),
+                      ),
                     ),
                     SizedBox(height: tokens.spacing.space1),
                     Text(
                       _relativeTime(notification.createdAt),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.text.withValues(alpha: 0.4)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: tokens.text.withValues(alpha: 0.4),
+                      ),
                     ),
                   ],
                 ),

@@ -6,7 +6,11 @@ void main() {
   test('forType is total over every ForgeNotificationType — no type is ever '
       'left with an unmapped, arbitrary, or null-by-accident destination', () {
     for (final type in ForgeNotificationType.values) {
-      expect(NotificationDeepLink.forType(type), isNotNull, reason: '$type has no deep link');
+      expect(
+        NotificationDeepLink.forType(type),
+        isNotNull,
+        reason: '$type has no deep link',
+      );
     }
   });
 

@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/backend/backend_providers.dart';
 import '../../../auth/presentation/auth_state.dart';
 import '../../../auth/presentation/auth_state_notifier.dart';
-import '../../../missions/domain/aggregates/mission_lifecycle_state.dart' as lifecycle;
+import '../../../missions/domain/aggregates/mission_lifecycle_state.dart'
+    as lifecycle;
 import '../../../missions/presentation/providers/mission_lifecycle_controller.dart';
 import '../../../missions/presentation/providers/mission_lifecycle_state.dart';
 import '../../../missions/presentation/providers/resolved_mission_instance_controller.dart';
@@ -38,7 +39,9 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
   @override
   NotificationInboxState build() {
     ref.onDispose(() => _disposed = true);
-    final authStatus = ref.watch(authStateNotifierProvider.select((s) => s.status));
+    final authStatus = ref.watch(
+      authStateNotifierProvider.select((s) => s.status),
+    );
     if (authStatus != AuthStatus.authenticated) {
       // Nothing from a previous session survives a sign-out — the next
       // build() (once a real sign-in happens) starts clean.
@@ -88,14 +91,18 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
       // itself is pull-based: opening it is an explicit user action, not
       // something quiet hours is meant to defer. If a push channel is
       // added later, quiet hours must gate delivery there too.
-      final combined = [...serverList, ...localList]
-          .where((n) => preferences.allows(n.type))
-          .toList()
-        ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      final combined =
+          [
+              ...serverList,
+              ...localList,
+            ].where((n) => preferences.allows(n.type)).toList()
+            ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       state = NotificationInboxReady(combined);
     } catch (_) {
       if (_disposed) return;
-      state = const NotificationInboxError("Couldn't load notifications right now.");
+      state = const NotificationInboxError(
+        "Couldn't load notifications right now.",
+      );
     } finally {
       if (!_readyCompleter.isCompleted) _readyCompleter.complete();
     }
@@ -121,11 +128,14 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
 
     final isAcceptedOrLater =
         lifecycleState is MissionLifecycleReady &&
-        lifecycleState.aggregate.lifecycleState != lifecycle.MissionLifecycleState.assigned &&
-        lifecycleState.aggregate.lifecycleState != lifecycle.MissionLifecycleState.viewed;
+        lifecycleState.aggregate.lifecycleState !=
+            lifecycle.MissionLifecycleState.assigned &&
+        lifecycleState.aggregate.lifecycleState !=
+            lifecycle.MissionLifecycleState.viewed;
     final isCompleted =
         lifecycleState is MissionLifecycleReady &&
-        lifecycleState.aggregate.lifecycleState == lifecycle.MissionLifecycleState.completed;
+        lifecycleState.aggregate.lifecycleState ==
+            lifecycle.MissionLifecycleState.completed;
     final acceptedAt = lifecycleState is MissionLifecycleReady
         ? lifecycleState.aggregate.acceptedAt
         : null;
@@ -203,10 +213,13 @@ class NotificationInboxController extends Notifier<NotificationInboxState> {
 
     final now = DateTime.now();
     state = NotificationInboxReady([
-      for (final n in current.notifications) n.isRead ? n : n.copyWith(readAt: now),
+      for (final n in current.notifications)
+        n.isRead ? n : n.copyWith(readAt: now),
     ]);
 
-    if (current.notifications.any((n) => n.type.isServerAuthoritative && !n.isRead)) {
+    if (current.notifications.any(
+      (n) => n.type.isServerAuthoritative && !n.isRead,
+    )) {
       await ref.read(notificationRepositoryProvider).markAllRead();
     }
   }

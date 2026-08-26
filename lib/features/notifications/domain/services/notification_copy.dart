@@ -14,7 +14,9 @@ abstract final class NotificationCopy {
     return switch (notification.type) {
       ForgeNotificationType.dailyMission => (
         title: "Today's mission is ready",
-        body: (metadata['missionTitle'] as String?) ?? 'A new mission is waiting for you.',
+        body:
+            (metadata['missionTitle'] as String?) ??
+            'A new mission is waiting for you.',
       ),
       ForgeNotificationType.dailyTransmission => (
         title: 'The Watcher has a transmission for you',
@@ -22,12 +24,14 @@ abstract final class NotificationCopy {
       ),
       ForgeNotificationType.missionFollowup => (
         title: 'Still open',
-        body: '"${metadata['missionTitle'] ?? 'Your mission'}" is still waiting — pick it back up '
+        body:
+            '"${metadata['missionTitle'] ?? 'Your mission'}" is still waiting — pick it back up '
             'whenever you\'re ready.',
       ),
       ForgeNotificationType.achievementUnlock => (
         title: 'Achievement unlocked',
-        body: (metadata['title'] as String?) ?? 'You unlocked a new achievement.',
+        body:
+            (metadata['title'] as String?) ?? 'You unlocked a new achievement.',
       ),
       ForgeNotificationType.levelUp => (
         title: 'Level up',
@@ -62,7 +66,9 @@ abstract final class NotificationCopy {
     final promoted = metadata['promoted'] == true;
     final demoted = metadata['demoted'] == true;
     if (promoted) return 'You were promoted at the end of this season.';
-    if (demoted) return 'You were moved down a league at the end of this season.';
+    if (demoted) {
+      return 'You were moved down a league at the end of this season.';
+    }
     return 'Your final standing for the season is ready.';
   }
 }

@@ -5,9 +5,15 @@ void main() {
   test('wireName is total and matches the SQL check constraint\'s snake_case '
       'values exactly', () {
     expect(ForgeNotificationType.dailyMission.wireName, 'daily_mission');
-    expect(ForgeNotificationType.dailyTransmission.wireName, 'daily_transmission');
+    expect(
+      ForgeNotificationType.dailyTransmission.wireName,
+      'daily_transmission',
+    );
     expect(ForgeNotificationType.missionFollowup.wireName, 'mission_followup');
-    expect(ForgeNotificationType.achievementUnlock.wireName, 'achievement_unlock');
+    expect(
+      ForgeNotificationType.achievementUnlock.wireName,
+      'achievement_unlock',
+    );
     expect(ForgeNotificationType.levelUp.wireName, 'level_up');
     expect(ForgeNotificationType.weekResult.wireName, 'week_result');
     expect(ForgeNotificationType.seasonResult.wireName, 'season_result');
@@ -41,11 +47,22 @@ void main() {
       ForgeNotificationType.weeklyRecap,
     };
     for (final type in clientOwned) {
-      expect(type.isServerAuthoritative, isFalse, reason: '$type must be client-owned');
+      expect(
+        type.isServerAuthoritative,
+        isFalse,
+        reason: '$type must be client-owned',
+      );
     }
     for (final type in serverAuthoritative) {
-      expect(type.isServerAuthoritative, isTrue, reason: '$type must be server-authoritative');
+      expect(
+        type.isServerAuthoritative,
+        isTrue,
+        reason: '$type must be server-authoritative',
+      );
     }
-    expect(clientOwned.length + serverAuthoritative.length, ForgeNotificationType.values.length);
+    expect(
+      clientOwned.length + serverAuthoritative.length,
+      ForgeNotificationType.values.length,
+    );
   });
 }

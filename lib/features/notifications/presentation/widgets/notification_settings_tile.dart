@@ -31,7 +31,9 @@ class NotificationSettingsTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     final preferences = ref.watch(notificationPreferencesControllerProvider);
-    final notifier = ref.read(notificationPreferencesControllerProvider.notifier);
+    final notifier = ref.read(
+      notificationPreferencesControllerProvider.notifier,
+    );
 
     Future<void> apply(
       NotificationPreferences Function(NotificationPreferences current) update,
@@ -56,15 +58,19 @@ class NotificationSettingsTile extends ConsumerWidget {
               children: [
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
-                  title: Text('All notifications', style: Theme.of(context).textTheme.bodyMedium),
+                  title: Text(
+                    'All notifications',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
                   subtitle: Text(
                     'Turn off to silence everything below',
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodySmall?.copyWith(color: tokens.text.withValues(alpha: 0.6)),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: tokens.text.withValues(alpha: 0.6),
+                    ),
                   ),
                   value: preferences.masterEnabled,
-                  onChanged: (value) => unawaited(apply((p) => p.copyWith(masterEnabled: value))),
+                  onChanged: (value) =>
+                      unawaited(apply((p) => p.copyWith(masterEnabled: value))),
                 ),
                 if (preferences.masterEnabled) ...[
                   const Divider(),
@@ -83,12 +89,15 @@ class NotificationSettingsTile extends ConsumerWidget {
                   const Divider(),
                   SwitchListTile(
                     contentPadding: EdgeInsets.zero,
-                    title: Text('Quiet hours', style: Theme.of(context).textTheme.bodyMedium),
+                    title: Text(
+                      'Quiet hours',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                     subtitle: Text(
                       'Pause delivery during a time window you choose',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.bodySmall?.copyWith(color: tokens.text.withValues(alpha: 0.6)),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: tokens.text.withValues(alpha: 0.6),
+                      ),
                     ),
                     value: preferences.quietHours.enabled,
                     onChanged: (value) => unawaited(
@@ -177,7 +186,10 @@ enum _Category {
     _Category.reEngagement => p.reEngagementEnabled,
   };
 
-  NotificationPreferences applyTo(NotificationPreferences p, bool value) => switch (this) {
+  NotificationPreferences applyTo(
+    NotificationPreferences p,
+    bool value,
+  ) => switch (this) {
     _Category.dailyMission => p.copyWith(dailyMissionEnabled: value),
     _Category.dailyTransmission => p.copyWith(dailyTransmissionEnabled: value),
     _Category.missionFollowup => p.copyWith(missionFollowupEnabled: value),
@@ -202,10 +214,16 @@ class _QuietHourTimeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final timeOfDay = TimeOfDay(hour: minuteOfDay ~/ 60, minute: minuteOfDay % 60);
+    final timeOfDay = TimeOfDay(
+      hour: minuteOfDay ~/ 60,
+      minute: minuteOfDay % 60,
+    );
     return OutlinedButton(
       onPressed: () async {
-        final picked = await showTimePicker(context: context, initialTime: timeOfDay);
+        final picked = await showTimePicker(
+          context: context,
+          initialTime: timeOfDay,
+        );
         if (picked != null) onPicked(picked.hour * 60 + picked.minute);
       },
       child: Text('$label: ${timeOfDay.format(context)}'),

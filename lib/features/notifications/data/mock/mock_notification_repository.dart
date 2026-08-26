@@ -24,7 +24,9 @@ class MockNotificationRepository implements NotificationRepository {
   Future<void> markRead(String notificationId) async {
     final index = _notifications.indexWhere((n) => n.id == notificationId);
     if (index == -1) return;
-    _notifications[index] = _notifications[index].copyWith(readAt: DateTime.now());
+    _notifications[index] = _notifications[index].copyWith(
+      readAt: DateTime.now(),
+    );
   }
 
   @override

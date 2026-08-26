@@ -27,7 +27,9 @@ Future<ProviderContainer> _pumpTile(
     ],
   );
   addTearDown(container.dispose);
-  await container.read(notificationPreferencesControllerProvider.notifier).ready;
+  await container
+      .read(notificationPreferencesControllerProvider.notifier)
+      .ready;
 
   await tester.pumpWidget(
     UncontrolledProviderScope(
@@ -45,7 +47,9 @@ Future<ProviderContainer> _pumpTile(
 }
 
 void main() {
-  testWidgets('shows every category toggle when the master switch is on', (tester) async {
+  testWidgets('shows every category toggle when the master switch is on', (
+    tester,
+  ) async {
     await _pumpTile(tester);
 
     expect(find.text('All notifications'), findsOneWidget);
@@ -86,17 +90,23 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      container.read(notificationPreferencesControllerProvider).achievementEnabled,
+      container
+          .read(notificationPreferencesControllerProvider)
+          .achievementEnabled,
       isFalse,
     );
     final persisted = await repository.getPreferences();
     expect(persisted.achievementEnabled, isFalse);
   });
 
-  testWidgets('re-engagement defaults off and can be opted into', (tester) async {
+  testWidgets('re-engagement defaults off and can be opted into', (
+    tester,
+  ) async {
     final container = await _pumpTile(tester);
     expect(
-      container.read(notificationPreferencesControllerProvider).reEngagementEnabled,
+      container
+          .read(notificationPreferencesControllerProvider)
+          .reEngagementEnabled,
       isFalse,
     );
 
@@ -104,7 +114,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      container.read(notificationPreferencesControllerProvider).reEngagementEnabled,
+      container
+          .read(notificationPreferencesControllerProvider)
+          .reEngagementEnabled,
       isTrue,
     );
   });

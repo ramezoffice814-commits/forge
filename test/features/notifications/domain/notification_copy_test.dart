@@ -3,7 +3,10 @@ import 'package:forge/features/notifications/domain/entities/forge_notification.
 import 'package:forge/features/notifications/domain/enums/forge_notification_type.dart';
 import 'package:forge/features/notifications/domain/services/notification_copy.dart';
 
-ForgeNotification _of(ForgeNotificationType type, Map<String, Object?> metadata) {
+ForgeNotification _of(
+  ForgeNotificationType type,
+  Map<String, Object?> metadata,
+) {
   return ForgeNotification(
     id: 'n',
     type: type,
@@ -29,14 +32,18 @@ void main() {
 
   test('achievement unlock copy uses the metadata title when present', () {
     final copy = NotificationCopy.resolve(
-      _of(ForgeNotificationType.achievementUnlock, const {'title': 'First Steps'}),
+      _of(ForgeNotificationType.achievementUnlock, const {
+        'title': 'First Steps',
+      }),
     );
     expect(copy.title, 'Achievement unlocked');
     expect(copy.body, 'First Steps');
   });
 
   test('achievement unlock copy falls back gracefully with no metadata', () {
-    final copy = NotificationCopy.resolve(_of(ForgeNotificationType.achievementUnlock, const {}));
+    final copy = NotificationCopy.resolve(
+      _of(ForgeNotificationType.achievementUnlock, const {}),
+    );
     expect(copy.body, isNotEmpty);
   });
 
@@ -47,31 +54,52 @@ void main() {
     expect(copy.body, contains('7'));
   });
 
-  test('week result copy distinguishes promotion, demotion, and neutral zones', () {
-    final promotion = NotificationCopy.resolve(
-      _of(ForgeNotificationType.weekResult, const {'rank': 1, 'promotionStatus': 'promotionZone'}),
-    );
-    final demotion = NotificationCopy.resolve(
-      _of(ForgeNotificationType.weekResult, const {'rank': 10, 'promotionStatus': 'demotionZone'}),
-    );
-    final neutral = NotificationCopy.resolve(
-      _of(ForgeNotificationType.weekResult, const {'rank': 5, 'promotionStatus': null}),
-    );
+  test(
+    'week result copy distinguishes promotion, demotion, and neutral zones',
+    () {
+      final promotion = NotificationCopy.resolve(
+        _of(ForgeNotificationType.weekResult, const {
+          'rank': 1,
+          'promotionStatus': 'promotionZone',
+        }),
+      );
+      final demotion = NotificationCopy.resolve(
+        _of(ForgeNotificationType.weekResult, const {
+          'rank': 10,
+          'promotionStatus': 'demotionZone',
+        }),
+      );
+      final neutral = NotificationCopy.resolve(
+        _of(ForgeNotificationType.weekResult, const {
+          'rank': 5,
+          'promotionStatus': null,
+        }),
+      );
 
-    expect(promotion.body, contains('promotion zone'));
-    expect(demotion.body, contains('demotion zone'));
-    expect(neutral.body, isNot(contains('zone')));
-  });
+      expect(promotion.body, contains('promotion zone'));
+      expect(demotion.body, contains('demotion zone'));
+      expect(neutral.body, isNot(contains('zone')));
+    },
+  );
 
   test('season result copy distinguishes promoted, demoted, and neither', () {
     final promoted = NotificationCopy.resolve(
-      _of(ForgeNotificationType.seasonResult, const {'promoted': true, 'demoted': false}),
+      _of(ForgeNotificationType.seasonResult, const {
+        'promoted': true,
+        'demoted': false,
+      }),
     );
     final demoted = NotificationCopy.resolve(
-      _of(ForgeNotificationType.seasonResult, const {'promoted': false, 'demoted': true}),
+      _of(ForgeNotificationType.seasonResult, const {
+        'promoted': false,
+        'demoted': true,
+      }),
     );
     final neither = NotificationCopy.resolve(
-      _of(ForgeNotificationType.seasonResult, const {'promoted': false, 'demoted': false}),
+      _of(ForgeNotificationType.seasonResult, const {
+        'promoted': false,
+        'demoted': false,
+      }),
     );
 
     expect(promoted.body, contains('promoted'));

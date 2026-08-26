@@ -48,6 +48,10 @@ enum ForgeNotificationType {
 
   bool get isServerAuthoritative => switch (this) {
     dailyMission || dailyTransmission || missionFollowup => false,
-    achievementUnlock || levelUp || weekResult || seasonResult || weeklyRecap => true,
+    achievementUnlock ||
+    levelUp ||
+    weekResult ||
+    seasonResult ||
+    weeklyRecap => true,
   };
 }

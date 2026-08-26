@@ -86,7 +86,11 @@ void main() {
         'delivery, is gated here since this reminder is never persisted', () {
       final reminder = LocalReminderEngine.dailyMissionReminder(
         preferences: const NotificationPreferences(
-          quietHours: QuietHours(enabled: true, startMinute: 0, endMinute: 1439),
+          quietHours: QuietHours(
+            enabled: true,
+            startMinute: 0,
+            endMinute: 1439,
+          ),
         ),
         localNow: noon,
         lastShownAt: null,
@@ -97,25 +101,28 @@ void main() {
       expect(reminder, isNull);
     });
 
-    test('dedup key is stable for the same day, regardless of exact minute', () {
-      final a = LocalReminderEngine.dailyMissionReminder(
-        preferences: const NotificationPreferences(),
-        localNow: DateTime(2026, 8, 25, 9, 1),
-        lastShownAt: null,
-        missionInstanceId: 'mi-1',
-        missionTitle: 'Push-ups',
-        missionAlreadyAccepted: false,
-      )!;
-      final b = LocalReminderEngine.dailyMissionReminder(
-        preferences: const NotificationPreferences(),
-        localNow: DateTime(2026, 8, 25, 20, 45),
-        lastShownAt: null,
-        missionInstanceId: 'mi-1',
-        missionTitle: 'Push-ups',
-        missionAlreadyAccepted: false,
-      )!;
-      expect(a.dedupKey, b.dedupKey);
-    });
+    test(
+      'dedup key is stable for the same day, regardless of exact minute',
+      () {
+        final a = LocalReminderEngine.dailyMissionReminder(
+          preferences: const NotificationPreferences(),
+          localNow: DateTime(2026, 8, 25, 9, 1),
+          lastShownAt: null,
+          missionInstanceId: 'mi-1',
+          missionTitle: 'Push-ups',
+          missionAlreadyAccepted: false,
+        )!;
+        final b = LocalReminderEngine.dailyMissionReminder(
+          preferences: const NotificationPreferences(),
+          localNow: DateTime(2026, 8, 25, 20, 45),
+          lastShownAt: null,
+          missionInstanceId: 'mi-1',
+          missionTitle: 'Push-ups',
+          missionAlreadyAccepted: false,
+        )!;
+        expect(a.dedupKey, b.dedupKey);
+      },
+    );
   });
 
   group('dailyTransmissionReminder', () {
@@ -156,7 +163,9 @@ void main() {
     test('is suppressed by its own category toggle independently of the '
         'daily mission toggle', () {
       final reminder = LocalReminderEngine.dailyTransmissionReminder(
-        preferences: const NotificationPreferences(dailyTransmissionEnabled: false),
+        preferences: const NotificationPreferences(
+          dailyTransmissionEnabled: false,
+        ),
         localNow: noon,
         lastShownAt: null,
         transmissionAlreadyAvailableToUser: true,
@@ -209,19 +218,22 @@ void main() {
       expect(reminder, isNotNull);
     });
 
-    test('respects the cooldown between two follow-ups for the same mission', () {
-      final lastShown = acceptedAt.add(const Duration(hours: 5));
-      final reminder = LocalReminderEngine.missionFollowupReminder(
-        preferences: const NotificationPreferences(),
-        localNow: lastShown.add(const Duration(hours: 2)),
-        lastShownAt: lastShown,
-        acceptedAt: acceptedAt,
-        missionInstanceId: 'mi-1',
-        missionTitle: 'Push-ups',
-        missionCompleted: false,
-      );
-      expect(reminder, isNull, reason: 'still within the 6h cooldown');
-    });
+    test(
+      'respects the cooldown between two follow-ups for the same mission',
+      () {
+        final lastShown = acceptedAt.add(const Duration(hours: 5));
+        final reminder = LocalReminderEngine.missionFollowupReminder(
+          preferences: const NotificationPreferences(),
+          localNow: lastShown.add(const Duration(hours: 2)),
+          lastShownAt: lastShown,
+          acceptedAt: acceptedAt,
+          missionInstanceId: 'mi-1',
+          missionTitle: 'Push-ups',
+          missionCompleted: false,
+        );
+        expect(reminder, isNull, reason: 'still within the 6h cooldown');
+      },
+    );
 
     test('fires again once the cooldown has fully elapsed', () {
       final lastShown = acceptedAt.add(const Duration(hours: 5));
@@ -237,24 +249,31 @@ void main() {
       expect(reminder, isNotNull);
     });
 
-    test('dedup key is per mission instance, not per day, so it can '
-        'legitimately recur while dedup still protects against exact retries', () {
-      final reminder = LocalReminderEngine.missionFollowupReminder(
-        preferences: const NotificationPreferences(),
-        localNow: acceptedAt.add(const Duration(hours: 5)),
-        lastShownAt: null,
-        acceptedAt: acceptedAt,
-        missionInstanceId: 'mi-42',
-        missionTitle: 'Push-ups',
-        missionCompleted: false,
-      )!;
-      expect(reminder.dedupKey, 'mission_followup:mi-42');
-    });
+    test(
+      'dedup key is per mission instance, not per day, so it can '
+      'legitimately recur while dedup still protects against exact retries',
+      () {
+        final reminder = LocalReminderEngine.missionFollowupReminder(
+          preferences: const NotificationPreferences(),
+          localNow: acceptedAt.add(const Duration(hours: 5)),
+          lastShownAt: null,
+          acceptedAt: acceptedAt,
+          missionInstanceId: 'mi-42',
+          missionTitle: 'Push-ups',
+          missionCompleted: false,
+        )!;
+        expect(reminder.dedupKey, 'mission_followup:mi-42');
+      },
+    );
 
     test('is suppressed by quiet hours even when otherwise eligible', () {
       final reminder = LocalReminderEngine.missionFollowupReminder(
         preferences: const NotificationPreferences(
-          quietHours: QuietHours(enabled: true, startMinute: 0, endMinute: 1439),
+          quietHours: QuietHours(
+            enabled: true,
+            startMinute: 0,
+            endMinute: 1439,
+          ),
         ),
         localNow: acceptedAt.add(const Duration(hours: 5)),
         lastShownAt: null,

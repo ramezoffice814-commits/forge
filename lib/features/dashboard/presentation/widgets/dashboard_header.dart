@@ -91,7 +91,8 @@ class DashboardHeader extends ConsumerWidget {
                   clipBehavior: Clip.none,
                   children: [
                     IconButton(
-                      onPressed: () => context.pushNamed(AppRouteNames.notifications),
+                      onPressed: () =>
+                          context.pushNamed(AppRouteNames.notifications),
                       icon: Icon(
                         Icons.notifications_none_rounded,
                         color: tokens.text.withValues(alpha: 0.8),
@@ -102,7 +103,10 @@ class DashboardHeader extends ConsumerWidget {
                         top: 6,
                         right: 6,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 1,
+                          ),
                           constraints: const BoxConstraints(minWidth: 16),
                           decoration: BoxDecoration(
                             color: tokens.accent,

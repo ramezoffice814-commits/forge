@@ -20,7 +20,9 @@ ForgeNotification? parseNotificationRow(Map<String, dynamic> row) {
     type: type,
     dedupKey: row['dedup_key'] as String,
     createdAt: DateTime.parse(row['created_at'] as String),
-    readAt: row['read_at'] == null ? null : DateTime.parse(row['read_at'] as String),
+    readAt: row['read_at'] == null
+        ? null
+        : DateTime.parse(row['read_at'] as String),
     metadata: metadata is Map<String, dynamic> ? metadata : const {},
   );
 }
@@ -29,12 +31,14 @@ NotificationPreferences parsePreferencesRow(Map<String, dynamic> row) {
   return NotificationPreferences(
     masterEnabled: row['master_enabled'] as bool? ?? true,
     dailyMissionEnabled: row['daily_mission_enabled'] as bool? ?? true,
-    dailyTransmissionEnabled: row['daily_transmission_enabled'] as bool? ?? true,
+    dailyTransmissionEnabled:
+        row['daily_transmission_enabled'] as bool? ?? true,
     missionFollowupEnabled: row['mission_followup_enabled'] as bool? ?? true,
     achievementEnabled: row['achievement_enabled'] as bool? ?? true,
     progressionEnabled: row['progression_enabled'] as bool? ?? true,
     weeklyRecapEnabled: row['weekly_recap_enabled'] as bool? ?? true,
-    competitionResultEnabled: row['competition_result_enabled'] as bool? ?? true,
+    competitionResultEnabled:
+        row['competition_result_enabled'] as bool? ?? true,
     reEngagementEnabled: row['re_engagement_enabled'] as bool? ?? false,
     quietHours: QuietHours(
       enabled: row['quiet_hours_enabled'] as bool? ?? false,

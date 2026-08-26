@@ -60,17 +60,20 @@ void main() {
       expect(notification, isNull);
     });
 
-    test('defaults metadata to an empty map when the row value is not a map', () {
-      final notification = parseNotificationRow({
-        'id': 'row-5',
-        'type': 'weekly_recap',
-        'dedup_key': 'x',
-        'created_at': '2026-08-20T09:00:00.000Z',
-        'read_at': null,
-        'metadata': 'not-a-map',
-      });
-      expect(notification!.metadata, isEmpty);
-    });
+    test(
+      'defaults metadata to an empty map when the row value is not a map',
+      () {
+        final notification = parseNotificationRow({
+          'id': 'row-5',
+          'type': 'weekly_recap',
+          'dedup_key': 'x',
+          'created_at': '2026-08-20T09:00:00.000Z',
+          'read_at': null,
+          'metadata': 'not-a-map',
+        });
+        expect(notification!.metadata, isEmpty);
+      },
+    );
   });
 
   group('parsePreferencesRow / preferencesToRow round trip', () {
@@ -92,8 +95,14 @@ void main() {
       expect(roundTripped.reEngagementEnabled, preferences.reEngagementEnabled);
       expect(roundTripped.timezone, preferences.timezone);
       expect(roundTripped.quietHours.enabled, preferences.quietHours.enabled);
-      expect(roundTripped.quietHours.startMinute, preferences.quietHours.startMinute);
-      expect(roundTripped.quietHours.endMinute, preferences.quietHours.endMinute);
+      expect(
+        roundTripped.quietHours.startMinute,
+        preferences.quietHours.startMinute,
+      );
+      expect(
+        roundTripped.quietHours.endMinute,
+        preferences.quietHours.endMinute,
+      );
     });
 
     test('parsePreferencesRow defaults missing columns to the safe defaults, '

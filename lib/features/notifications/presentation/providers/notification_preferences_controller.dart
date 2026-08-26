@@ -12,7 +12,8 @@ import 'notification_providers.dart';
 /// the real value in the background" shape, but as a full `Notifier`
 /// (not a bare `StateProvider`) since this also owns persisting writes,
 /// not just applying one loaded value.
-class NotificationPreferencesController extends Notifier<NotificationPreferences> {
+class NotificationPreferencesController
+    extends Notifier<NotificationPreferences> {
   final Completer<void> _readyCompleter = Completer<void>();
   bool _disposed = false;
 
@@ -21,7 +22,9 @@ class NotificationPreferencesController extends Notifier<NotificationPreferences
   @override
   NotificationPreferences build() {
     ref.onDispose(() => _disposed = true);
-    final authStatus = ref.watch(authStateNotifierProvider.select((s) => s.status));
+    final authStatus = ref.watch(
+      authStateNotifierProvider.select((s) => s.status),
+    );
     if (authStatus != AuthStatus.authenticated) {
       // Signed out: fall back to defaults rather than leaking the
       // previous user's choices into whatever screen reads this next
@@ -35,7 +38,9 @@ class NotificationPreferencesController extends Notifier<NotificationPreferences
 
   Future<void> _load() async {
     try {
-      final loaded = await ref.read(notificationRepositoryProvider).getPreferences();
+      final loaded = await ref
+          .read(notificationRepositoryProvider)
+          .getPreferences();
       if (_disposed) return;
       state = loaded;
     } catch (_) {
@@ -49,11 +54,14 @@ class NotificationPreferencesController extends Notifier<NotificationPreferences
 
   Future<void> update(NotificationPreferences preferences) async {
     state = preferences;
-    await ref.read(notificationRepositoryProvider).updatePreferences(preferences);
+    await ref
+        .read(notificationRepositoryProvider)
+        .updatePreferences(preferences);
   }
 }
 
 final notificationPreferencesControllerProvider =
-    NotifierProvider<NotificationPreferencesController, NotificationPreferences>(
-      NotificationPreferencesController.new,
-    );
+    NotifierProvider<
+      NotificationPreferencesController,
+      NotificationPreferences
+    >(NotificationPreferencesController.new);

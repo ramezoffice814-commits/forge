@@ -25,9 +25,14 @@ class _FixedState extends NotificationInboxController {
 Widget _wrap(NotificationInboxState state) {
   return ProviderScope(
     overrides: [
-      notificationInboxControllerProvider.overrideWith(() => _FixedState(state)),
+      notificationInboxControllerProvider.overrideWith(
+        () => _FixedState(state),
+      ),
     ],
-    child: MaterialApp(theme: ForgeTheme.dark(), home: const NotificationInboxPage()),
+    child: MaterialApp(
+      theme: ForgeTheme.dark(),
+      home: const NotificationInboxPage(),
+    ),
   );
 }
 
@@ -43,7 +48,11 @@ void main() {
 
   testWidgets('error state shows a retry affordance, not a raw stack trace '
       'or blank screen', (tester) async {
-    await tester.pumpWidget(_wrap(const NotificationInboxError("Couldn't load notifications right now.")));
+    await tester.pumpWidget(
+      _wrap(
+        const NotificationInboxError("Couldn't load notifications right now."),
+      ),
+    );
     await tester.pump();
 
     expect(find.text("Couldn't load notifications right now."), findsOneWidget);
@@ -98,19 +107,26 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         ...authenticatedTestOverrides(),
-        secureKeyValueStoreProvider.overrideWithValue(FakeSecureKeyValueStore()),
+        secureKeyValueStoreProvider.overrideWithValue(
+          FakeSecureKeyValueStore(),
+        ),
         notificationRepositoryProvider.overrideWithValue(repository),
       ],
     );
     addTearDown(container.dispose);
 
-    await container.read(resolvedMissionInstanceControllerProvider.notifier).ready;
+    await container
+        .read(resolvedMissionInstanceControllerProvider.notifier)
+        .ready;
     await container.read(notificationInboxControllerProvider.notifier).ready;
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
         container: container,
-        child: MaterialApp(theme: ForgeTheme.dark(), home: const NotificationInboxPage()),
+        child: MaterialApp(
+          theme: ForgeTheme.dark(),
+          home: const NotificationInboxPage(),
+        ),
       ),
     );
     await tester.pump();
@@ -119,7 +135,9 @@ void main() {
     await tester.tap(find.text('Mark all read'));
     await tester.pumpAndSettle();
 
-    final state = container.read(notificationInboxControllerProvider) as NotificationInboxReady;
+    final state =
+        container.read(notificationInboxControllerProvider)
+            as NotificationInboxReady;
     expect(state.notifications.every((n) => n.isRead), isTrue);
     expect(find.text('Mark all read'), findsNothing);
   });

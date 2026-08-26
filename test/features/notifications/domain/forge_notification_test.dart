@@ -20,24 +20,30 @@ void main() {
     expect(_notification(readAt: DateTime(2026, 8, 20, 10)).isRead, isTrue);
   });
 
-  test('copyWith(readAt: ...) marks it read without touching any other field', () {
-    final original = _notification();
-    final read = original.copyWith(readAt: DateTime(2026, 8, 21));
+  test(
+    'copyWith(readAt: ...) marks it read without touching any other field',
+    () {
+      final original = _notification();
+      final read = original.copyWith(readAt: DateTime(2026, 8, 21));
 
-    expect(read.isRead, isTrue);
-    expect(read.id, original.id);
-    expect(read.type, original.type);
-    expect(read.dedupKey, original.dedupKey);
-    expect(read.createdAt, original.createdAt);
-    expect(read.metadata, original.metadata);
-    expect(read.priority, original.priority);
-  });
+      expect(read.isRead, isTrue);
+      expect(read.id, original.id);
+      expect(read.type, original.type);
+      expect(read.dedupKey, original.dedupKey);
+      expect(read.createdAt, original.createdAt);
+      expect(read.metadata, original.metadata);
+      expect(read.priority, original.priority);
+    },
+  );
 
-  test('copyWith with no readAt argument preserves the existing read state', () {
-    final alreadyRead = _notification(readAt: DateTime(2026, 8, 20, 10));
-    final copy = alreadyRead.copyWith();
-    expect(copy.readAt, alreadyRead.readAt);
-  });
+  test(
+    'copyWith with no readAt argument preserves the existing read state',
+    () {
+      final alreadyRead = _notification(readAt: DateTime(2026, 8, 20, 10));
+      final copy = alreadyRead.copyWith();
+      expect(copy.readAt, alreadyRead.readAt);
+    },
+  );
 
   test('priority defaults to normal when not specified', () {
     expect(_notification().priority, NotificationPriority.normal);

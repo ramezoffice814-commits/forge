@@ -4,7 +4,11 @@ import 'package:forge/features/notifications/domain/entities/quiet_hours.dart';
 void main() {
   group('disabled', () {
     test('is never quiet, regardless of the time', () {
-      const quietHours = QuietHours(enabled: false, startMinute: 1350, endMinute: 420);
+      const quietHours = QuietHours(
+        enabled: false,
+        startMinute: 1350,
+        endMinute: 420,
+      );
       expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 23, 0)), isFalse);
       expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 3, 0)), isFalse);
       expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 12, 0)), isFalse);
@@ -12,7 +16,11 @@ void main() {
   });
 
   group('same-day window (e.g. 13:00 -> 17:00)', () {
-    const quietHours = QuietHours(enabled: true, startMinute: 780, endMinute: 1020);
+    const quietHours = QuietHours(
+      enabled: true,
+      startMinute: 780,
+      endMinute: 1020,
+    );
 
     test('is quiet strictly inside the window', () {
       expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 15, 0)), isTrue);
@@ -34,7 +42,11 @@ void main() {
 
   group('overnight window (22:30 -> 07:00) — must wrap correctly across '
       'midnight', () {
-    const quietHours = QuietHours(enabled: true, startMinute: 1350, endMinute: 420);
+    const quietHours = QuietHours(
+      enabled: true,
+      startMinute: 1350,
+      endMinute: 420,
+    );
 
     test('is quiet late at night, at/after the start minute', () {
       expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 22, 30)), isTrue);
@@ -62,12 +74,19 @@ void main() {
   });
 
   group('zero-width window (start == end)', () {
-    const quietHours = QuietHours(enabled: true, startMinute: 600, endMinute: 600);
+    const quietHours = QuietHours(
+      enabled: true,
+      startMinute: 600,
+      endMinute: 600,
+    );
 
-    test('is treated as always-quiet rather than never-quiet, deterministically', () {
-      expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 0, 0)), isTrue);
-      expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 10, 0)), isTrue);
-      expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 23, 59)), isTrue);
-    });
+    test(
+      'is treated as always-quiet rather than never-quiet, deterministically',
+      () {
+        expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 0, 0)), isTrue);
+        expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 10, 0)), isTrue);
+        expect(quietHours.isQuietAt(DateTime(2026, 8, 25, 23, 59)), isTrue);
+      },
+    );
   });
 }

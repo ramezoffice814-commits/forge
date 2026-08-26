@@ -18,14 +18,15 @@ enum NotificationDeepLink {
   progression,
   leaderboard;
 
-  static NotificationDeepLink? forType(ForgeNotificationType type) => switch (type) {
-    ForgeNotificationType.dailyMission => activeMission,
-    ForgeNotificationType.dailyTransmission => dailyTransmission,
-    ForgeNotificationType.missionFollowup => activeMission,
-    ForgeNotificationType.achievementUnlock => progression,
-    ForgeNotificationType.levelUp => progression,
-    ForgeNotificationType.weekResult => leaderboard,
-    ForgeNotificationType.seasonResult => leaderboard,
-    ForgeNotificationType.weeklyRecap => progression,
-  };
+  static NotificationDeepLink? forType(ForgeNotificationType type) =>
+      switch (type) {
+        ForgeNotificationType.dailyMission => activeMission,
+        ForgeNotificationType.dailyTransmission => dailyTransmission,
+        ForgeNotificationType.missionFollowup => activeMission,
+        ForgeNotificationType.achievementUnlock => progression,
+        ForgeNotificationType.levelUp => progression,
+        ForgeNotificationType.weekResult => leaderboard,
+        ForgeNotificationType.seasonResult => leaderboard,
+        ForgeNotificationType.weeklyRecap => progression,
+      };
 }

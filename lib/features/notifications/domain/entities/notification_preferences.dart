@@ -28,7 +28,11 @@ class NotificationPreferences {
     // Opt-in, not opt-out (spec section 4H: "no manipulative come-back
     // spam" — a user who never turns this on never gets one).
     this.reEngagementEnabled = false,
-    this.quietHours = const QuietHours(enabled: false, startMinute: 1350, endMinute: 420),
+    this.quietHours = const QuietHours(
+      enabled: false,
+      startMinute: 1350,
+      endMinute: 420,
+    ),
     this.timezone = 'UTC',
   });
 
@@ -64,12 +68,15 @@ class NotificationPreferences {
     return NotificationPreferences(
       masterEnabled: masterEnabled ?? this.masterEnabled,
       dailyMissionEnabled: dailyMissionEnabled ?? this.dailyMissionEnabled,
-      dailyTransmissionEnabled: dailyTransmissionEnabled ?? this.dailyTransmissionEnabled,
-      missionFollowupEnabled: missionFollowupEnabled ?? this.missionFollowupEnabled,
+      dailyTransmissionEnabled:
+          dailyTransmissionEnabled ?? this.dailyTransmissionEnabled,
+      missionFollowupEnabled:
+          missionFollowupEnabled ?? this.missionFollowupEnabled,
       achievementEnabled: achievementEnabled ?? this.achievementEnabled,
       progressionEnabled: progressionEnabled ?? this.progressionEnabled,
       weeklyRecapEnabled: weeklyRecapEnabled ?? this.weeklyRecapEnabled,
-      competitionResultEnabled: competitionResultEnabled ?? this.competitionResultEnabled,
+      competitionResultEnabled:
+          competitionResultEnabled ?? this.competitionResultEnabled,
       reEngagementEnabled: reEngagementEnabled ?? this.reEngagementEnabled,
       quietHours: quietHours ?? this.quietHours,
       timezone: timezone ?? this.timezone,

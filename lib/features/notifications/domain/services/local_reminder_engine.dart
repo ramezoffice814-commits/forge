@@ -71,7 +71,10 @@ abstract final class LocalReminderEngine {
       dedupKey: dedupKey,
       createdAt: localNow,
       readAt: null,
-      metadata: {'missionInstanceId': missionInstanceId, 'missionTitle': missionTitle},
+      metadata: {
+        'missionInstanceId': missionInstanceId,
+        'missionTitle': missionTitle,
+      },
     );
   }
 
@@ -127,7 +130,8 @@ abstract final class LocalReminderEngine {
     // for already-completed mission").
     if (missionCompleted) return null;
     if (localNow.difference(acceptedAt) < followupMinimumAge) return null;
-    if (lastShownAt != null && localNow.difference(lastShownAt) < followupCooldown) {
+    if (lastShownAt != null &&
+        localNow.difference(lastShownAt) < followupCooldown) {
       return null;
     }
 
@@ -138,7 +142,10 @@ abstract final class LocalReminderEngine {
       dedupKey: dedupKey,
       createdAt: localNow,
       readAt: null,
-      metadata: {'missionInstanceId': missionInstanceId, 'missionTitle': missionTitle},
+      metadata: {
+        'missionInstanceId': missionInstanceId,
+        'missionTitle': missionTitle,
+      },
     );
   }
 

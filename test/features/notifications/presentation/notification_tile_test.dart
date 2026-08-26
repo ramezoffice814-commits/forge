@@ -8,12 +8,16 @@ import 'package:forge/features/notifications/presentation/widgets/notification_t
 Widget _wrap(ForgeNotification notification, VoidCallback onTap) {
   return MaterialApp(
     theme: ForgeTheme.dark(),
-    home: Scaffold(body: NotificationTile(notification: notification, onTap: onTap)),
+    home: Scaffold(
+      body: NotificationTile(notification: notification, onTap: onTap),
+    ),
   );
 }
 
 void main() {
-  testWidgets('renders the deterministic title and body for its type', (tester) async {
+  testWidgets('renders the deterministic title and body for its type', (
+    tester,
+  ) async {
     final notification = ForgeNotification(
       id: 'n-1',
       type: ForgeNotificationType.achievementUnlock,

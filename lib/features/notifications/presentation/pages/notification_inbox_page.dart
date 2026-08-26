@@ -30,22 +30,27 @@ class NotificationInboxPage extends ConsumerWidget {
         actions: [
           if (state is NotificationInboxReady && state.unreadCount > 0)
             TextButton(
-              onPressed: () =>
-                  ref.read(notificationInboxControllerProvider.notifier).markAllRead(),
+              onPressed: () => ref
+                  .read(notificationInboxControllerProvider.notifier)
+                  .markAllRead(),
               child: const Text('Mark all read'),
             ),
         ],
       ),
       body: switch (state) {
-        NotificationInboxLoading() => const ForgeLoadingState(message: 'Loading notifications…'),
+        NotificationInboxLoading() => const ForgeLoadingState(
+          message: 'Loading notifications…',
+        ),
         NotificationInboxError(:final message) => ForgeRetryState(
           title: message,
           onRetry: () => ref.invalidate(notificationInboxControllerProvider),
         ),
-        NotificationInboxReady(:final notifications) when notifications.isEmpty =>
+        NotificationInboxReady(:final notifications)
+            when notifications.isEmpty =>
           const ForgeEmptyState(
             title: 'Nothing here yet',
-            message: 'Achievements, level-ups, and weekly results will show up here.',
+            message:
+                'Achievements, level-ups, and weekly results will show up here.',
           ),
         NotificationInboxReady(:final notifications) => ListView.separated(
           padding: EdgeInsets.all(tokens.spacing.space3),
@@ -63,8 +68,14 @@ class NotificationInboxPage extends ConsumerWidget {
     );
   }
 
-  void _handleTap(BuildContext context, WidgetRef ref, ForgeNotification notification) {
-    ref.read(notificationInboxControllerProvider.notifier).markRead(notification);
+  void _handleTap(
+    BuildContext context,
+    WidgetRef ref,
+    ForgeNotification notification,
+  ) {
+    ref
+        .read(notificationInboxControllerProvider.notifier)
+        .markRead(notification);
     final destination = NotificationDeepLink.forType(notification.type);
     // Fails safe: an unrecognized type (shouldn't be reachable —
     // NotificationDeepLink.forType is total over the enum — but kept

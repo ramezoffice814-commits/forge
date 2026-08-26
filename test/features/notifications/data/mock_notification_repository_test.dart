@@ -30,7 +30,10 @@ void main() {
 
   test('markRead flips only the targeted notification\'s read state', () async {
     final repository = MockNotificationRepository(
-      seed: [_seed('a', DateTime(2026, 8, 20)), _seed('b', DateTime(2026, 8, 21))],
+      seed: [
+        _seed('a', DateTime(2026, 8, 20)),
+        _seed('b', DateTime(2026, 8, 21)),
+      ],
     );
 
     await repository.markRead('a');
@@ -41,38 +44,46 @@ void main() {
   });
 
   test('markRead on an unknown id is a safe no-op', () async {
-    final repository = MockNotificationRepository(seed: [_seed('a', DateTime(2026, 8, 20))]);
+    final repository = MockNotificationRepository(
+      seed: [_seed('a', DateTime(2026, 8, 20))],
+    );
     await repository.markRead('does-not-exist');
     final inbox = await repository.fetchInbox();
     expect(inbox.single.isRead, isFalse);
   });
 
-  test('markAllRead marks every unread notification read and leaves already-read '
-      'ones untouched', () async {
-    final alreadyReadAt = DateTime(2026, 8, 19);
-    final repository = MockNotificationRepository(
-      seed: [
-        _seed('a', DateTime(2026, 8, 20)),
-        _seed('b', DateTime(2026, 8, 21), readAt: alreadyReadAt),
-      ],
-    );
+  test(
+    'markAllRead marks every unread notification read and leaves already-read '
+    'ones untouched',
+    () async {
+      final alreadyReadAt = DateTime(2026, 8, 19);
+      final repository = MockNotificationRepository(
+        seed: [
+          _seed('a', DateTime(2026, 8, 20)),
+          _seed('b', DateTime(2026, 8, 21), readAt: alreadyReadAt),
+        ],
+      );
 
-    await repository.markAllRead();
-    final inbox = await repository.fetchInbox();
+      await repository.markAllRead();
+      final inbox = await repository.fetchInbox();
 
-    expect(inbox.every((n) => n.isRead), isTrue);
-    expect(inbox.firstWhere((n) => n.id == 'b').readAt, alreadyReadAt);
-  });
+      expect(inbox.every((n) => n.isRead), isTrue);
+      expect(inbox.firstWhere((n) => n.id == 'b').readAt, alreadyReadAt);
+    },
+  );
 
-  test('preferences default, then persist via updatePreferences/getPreferences', () async {
-    final repository = MockNotificationRepository();
-    final defaults = await repository.getPreferences();
-    expect(defaults.masterEnabled, isTrue);
+  test(
+    'preferences default, then persist via updatePreferences/getPreferences',
+    () async {
+      final repository = MockNotificationRepository();
+      final defaults = await repository.getPreferences();
+      expect(defaults.masterEnabled, isTrue);
 
-    final updated = defaults.copyWith(masterEnabled: false);
-    await repository.updatePreferences(updated);
+      final updated = defaults.copyWith(masterEnabled: false);
+      await repository.updatePreferences(updated);
 
-    final reloaded = await repository.getPreferences();
-    expect(reloaded.masterEnabled, isFalse);
-  });
+      final reloaded = await repository.getPreferences();
+      expect(reloaded.masterEnabled, isFalse);
+    },
+  );
 }

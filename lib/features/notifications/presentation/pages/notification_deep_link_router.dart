@@ -16,7 +16,11 @@ import '../../domain/enums/notification_deep_link.dart';
 /// a notification's metadata might carry — a stale or forged id in a
 /// payload can therefore never route anywhere but here, and even here
 /// it's ignored outright.
-void navigateToDeepLink(BuildContext context, WidgetRef ref, NotificationDeepLink destination) {
+void navigateToDeepLink(
+  BuildContext context,
+  WidgetRef ref,
+  NotificationDeepLink destination,
+) {
   switch (destination) {
     case NotificationDeepLink.dashboard:
       context.goNamed(AppRouteNames.home);

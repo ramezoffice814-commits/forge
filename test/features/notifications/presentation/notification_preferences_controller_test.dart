@@ -13,7 +13,9 @@ void main() {
   test('build() returns safe defaults synchronously before the async load '
       'resolves', () async {
     final repository = MockNotificationRepository();
-    await repository.updatePreferences(const NotificationPreferences(masterEnabled: false));
+    await repository.updatePreferences(
+      const NotificationPreferences(masterEnabled: false),
+    );
 
     final container = ProviderContainer(
       overrides: [
@@ -25,34 +27,46 @@ void main() {
 
     // Synchronous read, before awaiting `ready` — must be the safe
     // default, not whatever the repository will eventually return.
-    expect(container.read(notificationPreferencesControllerProvider).masterEnabled, isTrue);
+    expect(
+      container.read(notificationPreferencesControllerProvider).masterEnabled,
+      isTrue,
+    );
   });
 
-  test('loads the real persisted preferences from the repository once ready', () async {
-    final repository = MockNotificationRepository();
-    await repository.updatePreferences(
-      const NotificationPreferences(
-        masterEnabled: true,
-        achievementEnabled: false,
-        quietHours: QuietHours(enabled: true, startMinute: 1320, endMinute: 360),
-      ),
-    );
+  test(
+    'loads the real persisted preferences from the repository once ready',
+    () async {
+      final repository = MockNotificationRepository();
+      await repository.updatePreferences(
+        const NotificationPreferences(
+          masterEnabled: true,
+          achievementEnabled: false,
+          quietHours: QuietHours(
+            enabled: true,
+            startMinute: 1320,
+            endMinute: 360,
+          ),
+        ),
+      );
 
-    final container = ProviderContainer(
-      overrides: [
-        ...authenticatedTestOverrides(),
-        notificationRepositoryProvider.overrideWithValue(repository),
-      ],
-    );
-    addTearDown(container.dispose);
+      final container = ProviderContainer(
+        overrides: [
+          ...authenticatedTestOverrides(),
+          notificationRepositoryProvider.overrideWithValue(repository),
+        ],
+      );
+      addTearDown(container.dispose);
 
-    await container.read(notificationPreferencesControllerProvider.notifier).ready;
-    final loaded = container.read(notificationPreferencesControllerProvider);
+      await container
+          .read(notificationPreferencesControllerProvider.notifier)
+          .ready;
+      final loaded = container.read(notificationPreferencesControllerProvider);
 
-    expect(loaded.achievementEnabled, isFalse);
-    expect(loaded.quietHours.enabled, isTrue);
-    expect(loaded.quietHours.startMinute, 1320);
-  });
+      expect(loaded.achievementEnabled, isFalse);
+      expect(loaded.quietHours.enabled, isTrue);
+      expect(loaded.quietHours.startMinute, 1320);
+    },
+  );
 
   test('update() persists the new preferences to the repository, not just '
       'local state', () async {
@@ -65,13 +79,22 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await container.read(notificationPreferencesControllerProvider.notifier).ready;
+    await container
+        .read(notificationPreferencesControllerProvider.notifier)
+        .ready;
     final updated = container
         .read(notificationPreferencesControllerProvider)
         .copyWith(reEngagementEnabled: true, competitionResultEnabled: false);
-    await container.read(notificationPreferencesControllerProvider.notifier).update(updated);
+    await container
+        .read(notificationPreferencesControllerProvider.notifier)
+        .update(updated);
 
-    expect(container.read(notificationPreferencesControllerProvider).reEngagementEnabled, isTrue);
+    expect(
+      container
+          .read(notificationPreferencesControllerProvider)
+          .reEngagementEnabled,
+      isTrue,
+    );
     final persisted = await repository.getPreferences();
     expect(persisted.reEngagementEnabled, isTrue);
     expect(persisted.competitionResultEnabled, isFalse);
@@ -80,7 +103,9 @@ void main() {
   test('an unauthenticated session never loads or exposes another user\'s '
       'preferences — falls back to safe defaults instead', () async {
     final repository = MockNotificationRepository();
-    await repository.updatePreferences(const NotificationPreferences(masterEnabled: false));
+    await repository.updatePreferences(
+      const NotificationPreferences(masterEnabled: false),
+    );
 
     final container = ProviderContainer(
       overrides: [
@@ -94,7 +119,10 @@ void main() {
     // since build() short-circuits before scheduling `_load` at all.
     await Future<void>.delayed(Duration.zero);
 
-    expect(container.read(notificationPreferencesControllerProvider).masterEnabled, isTrue);
+    expect(
+      container.read(notificationPreferencesControllerProvider).masterEnabled,
+      isTrue,
+    );
   });
 
   test('AI privacy settings are a separate concern: notification preferences '
@@ -102,7 +130,9 @@ void main() {
     // No AI-related override supplied at all — if NotificationPreferencesController
     // secretly depended on an AI privacy provider, this container would
     // throw a missing-override/uninitialized-provider error on read.
-    final container = ProviderContainer(overrides: authenticatedTestOverrides());
+    final container = ProviderContainer(
+      overrides: authenticatedTestOverrides(),
+    );
     addTearDown(container.dispose);
 
     expect(
