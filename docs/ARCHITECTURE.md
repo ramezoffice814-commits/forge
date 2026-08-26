@@ -352,3 +352,39 @@ hand-rolled Android boot receiver was out of scope; no real Android
 emulator/device or Windows Developer Mode was available in the
 environment this item was built in, so real-device smoke testing is
 unverified rather than assumed passing.
+
+## Crash / uncaught-error handling (Roadmap Item 18)
+
+`lib/core/error/crash_handler.dart`'s `installCrashHandlers()` is the
+one place any error not already caught somewhere more specific passes
+through — called once from `main.dart`, which also wraps startup and
+`runApp` in `runZonedGuarded`. Three layers, matching Flutter's own
+documented recommendation for this exact problem:
+
+- `FlutterError.onError` — errors inside Flutter's build/layout/paint
+  pipeline. Logs via `logCrash`, then still calls whatever the previous
+  handler would have done (console dump, plus the on-screen error
+  overlay in debug/profile builds) — this adds logging, it doesn't
+  replace Flutter's own presentation.
+- `PlatformDispatcher.instance.onError` — errors outside that pipeline
+  (a platform-channel callback, an async error not routed through
+  Flutter's zone). Returns `true` (handled) so the engine doesn't
+  terminate the app.
+- `runZonedGuarded` around `main()`'s body — the outermost net for a
+  genuinely uncaught async error with no closer handler at all.
+
+Deliberately console-only (`debugPrint`, via `logCrash`) — this is a
+*boundary*, not a crash-reporting product. No paid SaaS (Crashlytics,
+Sentry) is wired in; `logCrash` is the one seam a real one would hook
+into later, a decision left to a future item (see
+[docs/ROADMAP.md](ROADMAP.md) Item 18/19), not made unprompted here.
+
+## Production readiness (Roadmap Item 18)
+
+See [docs/RELEASE_READINESS.md](RELEASE_READINESS.md) for the full
+area-by-area readiness matrix, security/performance/accessibility
+findings, exact release-build results per platform, and the ranked
+P0–P3 blocker list — and [docs/RECOVERY.md](RECOVERY.md) for the
+backup/recovery/rollback story. Neither is duplicated here; this file
+stays focused on how the system is built, not its current release
+status, which changes independently of the architecture.

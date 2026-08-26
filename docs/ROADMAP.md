@@ -358,9 +358,78 @@ assumed.
 green (see the PR); no Deno/SQL/staging verification needed — no server
 schema or RPC changed, only client-side scheduling logic.
 
+### 18 — Production Hardening & Release Readiness
+A whole-codebase production-readiness audit (see
+[docs/RELEASE_READINESS.md](RELEASE_READINESS.md) for the full,
+area-by-area matrix and blocker list) covering security, configuration,
+error handling, crash handling, observability, performance, migrations,
+backup/recovery, data retention, account-deletion readiness, legal/
+privacy surfaces, accessibility, and all three platform build pipelines
+— **not** a production deployment.
+
+Re-verified the existing security/RLS/grant/Edge-Function hardening from
+Items 15/PR#8 still holds after Items 16/17 with no drift, and found no
+new P0 (cannot-release) issue anywhere. Real gaps found and fixed where
+safe and well-scoped:
+
+- **No crash/uncaught-error handling existed at all** — added
+  `lib/core/error/crash_handler.dart` (`FlutterError.onError`,
+  `PlatformDispatcher.instance.onError`, `runZonedGuarded` in
+  `main.dart`), console-only, no paid crash-reporting SaaS wired in.
+- **The Android release build was broken** by Item 17's own
+  `flutter_local_notifications` dependency (missing core library
+  desugaring) — a real, previously-undiscovered regression this item's
+  own release-build attempt surfaced and fixed
+  (`android/app/build.gradle.kts`).
+- **`notifications.fetchInbox()` had no `.limit()`** on a table with no
+  retention policy, re-run on every sign-in/preference change — bounded
+  to 200 rows.
+- **`xp_ledger`/`competition_score_ledger`'s daily/weekly cap queries**
+  (inside `forge_submit_mission`) had no supporting composite index —
+  two purely-additive indexes added
+  (`20260826020000_performance_indexes.sql`), verified via a clean
+  `supabase db reset` + the full 17-script SQL suite + 25 Deno tests, all
+  passing.
+- `supabase_flutter` upgraded 2.16.0 → 2.17.2 (same major version, the
+  only dependency judged clearly low-risk) with full regression
+  verification; `flutter_riverpod`/`go_router`/`flutter_secure_storage`
+  major-version upgrades were deliberately deferred as out of scope for
+  a hardening pass.
+
+Confirmed-absent, documented rather than fabricated: **no Terms of
+Service or Privacy Policy exists anywhere in the app** (a real
+app-store-submission blocker), the Android release build remains
+debug-signed (real signing keys were explicitly not generated this
+pass), and a genuine staging smoke test with real credentials could not
+be run (none available in this environment) — a fabricated-but-non-empty
+live-mode Web build was smoke-tested instead, confirming the release/
+live path boots cleanly with no mock fallback and no debug banner, which
+is the part actually verifiable without real secrets. Windows release
+build is blocked by this machine's disabled Developer Mode (a
+system-setting change requiring explicit permission, not toggled
+automatically). `ActiveMissionPage`/`ProgressPage` accessibility gaps
+and several cosmetic/branding items (default Android launcher
+icon/splash, default Web `theme_color`) were found and documented, not
+fixed — kept out of scope to avoid turning a hardening pass into a
+redesign.
+
+**Classification: PARTIALLY VERIFIED** — no P0 blocker, full regression
+green (Flutter 970 passed/2 skipped/0 failed, Golden 18/18, SQL 17/17,
+Deno 25/25), but real release-signing, legal content, and a live
+staging smoke test remain genuinely outstanding pending assets/
+credentials only a human can provide. See
+[docs/RELEASE_READINESS.md](RELEASE_READINESS.md) for the complete
+blocker list (P0–P3) and exact reasoning behind every fixed-vs-deferred
+decision.
+
 ## Next
 
-Item 18 has not yet been scoped.
+Item 19 has not yet been scoped. Candidates surfaced by Item 18's own
+audit: real Android release signing + a CI build step to catch
+regressions like this pass's desugaring break automatically; authored
+Terms of Service/Privacy Policy content; a real staging smoke test once
+credentials are available; a `notifications`/`LocalReminderStore`
+retention policy; a full accessibility pass.
 
 ## Further Out
 
@@ -374,13 +443,17 @@ Named as future direction, not committed scope or timelines:
 - Optional re-engagement notifications (Item 15's type H).
 - Real account deletion, once a backend deletion flow exists (Item 16
   intentionally left the existing honest placeholder in place rather than
-  implementing destructive deletion without a security review).
+  implementing destructive deletion without a security review; Item 18
+  enumerated the affected tables and the cascade-vs-anonymize design
+  question that still needs deciding).
 - Theme (light/dark) and locale/i18n support, if ever prioritized —
   neither exists today, so Item 16's Settings screen has nothing to
   surface for them yet.
 - A device-reboot-surviving reschedule path for Mission Follow-up
   (requires a native Android boot receiver the current plugin doesn't
   provide out of the box).
+- A real crash-reporting SaaS (Crashlytics/Sentry) — Item 18 added only
+  a console-logging crash boundary, deliberately not a paid service.
 - Monetization.
 - Production deployment (only after Item 13 is complete and reviewed).
 - iOS/macOS/Linux platform targets (only Android, Web, and Windows exist
