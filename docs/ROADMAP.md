@@ -193,9 +193,60 @@ warm instances — must become a persistent, cross-instance counter before
 any real, paid provider is connected. Not a blocker while the only
 provider is the free mock.
 
+### 15 — Notifications, Retention & Daily Operating Loop
+A Forge-native notification domain and in-app inbox, built on the
+existing client/server trust boundary (`lib/core/security/
+trust_boundary.dart`): Achievement Unlock, Level-up, Week Result,
+Season Result, and Weekly Recap are server-authoritative rows, written
+exclusively by `forge_create_notification()` inside the same
+transaction as the fact each one describes (`forge_submit_mission`,
+`forge_finalize_season_week`, `forge_finalize_season`) — never
+client-inserted, never inferred ahead of server confirmation. Daily
+Mission, Daily Transmission, and Mission Follow-up reminders are
+computed live client-side from state the client already treats as
+authoritative, deliberately not persisted server-side (this avoids
+duplicating Item 13C's own client-request-driven mission-assignment
+architecture with a new server-side batch pipeline). Per-category
+preferences (including quiet hours, correctly handling the overnight
+wraparound) actually gate what reaches the inbox; deep links route
+through a closed, exhaustively-matched enum so no notification payload
+can navigate to an arbitrary destination.
+
+While deploying to `forge-staging`, a live smoke test found and fixed
+two critical, live-exploitable bugs: `forge_create_notification` was
+directly callable by `anon`/`authenticated` via RPC, and the two new
+tables had full CRUD open to both roles despite the migration's own
+narrower `grant` statements — the root cause (a real hosted Supabase
+project's platform bootstrap grants broad privileges outside this
+repo's migrations, which additive `grant` statements alone never
+override) turned out to affect **every table created before this
+item**. A follow-up system-wide audit found the same root cause had
+left `mission_instances`/`mission_events` directly rewritable by any
+authenticated client, bypassing `forge_submit_mission`'s entire
+validation/XP/achievement pipeline — confirmed the real Flutter client
+never touches either table directly (every mission command goes
+through Edge Functions calling the SECURITY DEFINER `forge_*`
+functions instead), so both are now fully server-only, and every other
+pre-existing table is narrowed to its already-documented intended
+grant. See PR #8 for the full audit.
+
+**Classification: COMPLETE within current scoped architecture.**
+Deliberately deferred, not defects: Optional Re-engagement (type H —
+the preference field exists, opt-in, but no notification is ever
+generated); OS-level local push (`flutter_local_notifications`) and
+remote push (FCM/APNs/web push) — delivery is in-app inbox only this
+pass, matching the spec's own priority ordering and the explicit
+stop-condition around new paid providers/infrastructure. Verified:
+offline/reconnect (fetch failure → retryable error state, recovery,
+no duplication, read-state persistence across a reconnect), account-
+switch isolation, AI-disabled compatibility (zero dependency on any AI
+Coach provider), and — via the system-wide audit above — that the
+client cannot forge, mutate, or read across users for any
+notification or reward-authority row anywhere in the schema.
+
 ## Next
 
-Item 15 has not yet been scoped.
+Item 16 has not yet been scoped.
 
 ## Further Out
 
@@ -203,7 +254,9 @@ Named as future direction, not committed scope or timelines:
 
 - Real AI-generated character dialogue, replacing the current mock
   scripts.
-- Notifications.
+- OS-level local push and remote push notifications (FCM/APNs/web
+  push) — Item 15 shipped in-app inbox only.
+- Optional re-engagement notifications (Item 15's type H).
 - Monetization.
 - Production deployment (only after Item 13 is complete and reviewed).
 - iOS/macOS/Linux platform targets (only Android, Web, and Windows exist
