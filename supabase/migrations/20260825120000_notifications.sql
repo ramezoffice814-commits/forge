@@ -93,6 +93,22 @@ create policy notifications_update_own
 -- narrowed to read_at only — a client can mark a notification read but
 -- cannot rewrite its type, metadata, or dedup_key even though the
 -- row-level policy above would otherwise permit updating the whole row.
+--
+-- CRITICAL: `revoke all` first, confirmed necessary via a live staging
+-- smoke test (see the Item 15 PR description) — a real hosted Supabase
+-- project's platform bootstrap grants full table privileges (SELECT/
+-- INSERT/UPDATE/DELETE/TRUNCATE/REFERENCES/TRIGGER) to anon/
+-- authenticated on every new table via ALTER DEFAULT PRIVILEGES,
+-- outside this repo's migrations — the same root cause this codebase
+-- already documented for function EXECUTE grants
+-- (20260821090200_revoke_server_only_functions.sql), now confirmed to
+-- apply to tables too. Without the revoke below, the `grant update
+-- (read_at)` line is additive on top of an already-existing unscoped
+-- UPDATE grant and narrows nothing — confirmed exploitable (an
+-- authenticated user could rewrite `type` on their own row) before
+-- this revoke, confirmed closed after it, both directly against
+-- forge-staging.
+revoke all on public.notifications from anon, authenticated;
 grant select on public.notifications to authenticated;
 grant update (read_at) on public.notifications to authenticated;
 
@@ -170,9 +186,14 @@ create policy notification_preferences_update_own
   with check (user_id = auth.uid());
 
 -- Baseline table-level grant — see the comment on the notifications
--- grant above for why this is required in addition to the policies.
--- Unlike notifications, every column here is legitimately user-owned,
--- so no column-level narrowing is needed.
+-- grant above for why this is required in addition to the policies,
+-- and why the `revoke all` is required first (confirmed necessary via
+-- the same live staging smoke test). Unlike notifications, every
+-- column here is legitimately user-owned, so no column-level
+-- narrowing is needed — but INSERT/DELETE/TRUNCATE still must not
+-- survive from the platform's default grant, since this table's only
+-- INSERT path is the bootstrap trigger, never a direct client write.
+revoke all on public.notification_preferences from anon, authenticated;
 grant select, update on public.notification_preferences to authenticated;
 
 -- Bootstrap: one notification_preferences row per new auth.users row,
