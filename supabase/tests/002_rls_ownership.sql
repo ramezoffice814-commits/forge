@@ -69,26 +69,44 @@ begin
   end if;
   raise notice 'PASS: user_a cannot update user_b''s profile';
 
-  if not exists (select 1 from public.mission_instances where id = instance_a) then
-    raise exception 'FAIL: user_a cannot read their own mission_instances row';
-  end if;
-  raise notice 'PASS: user_a can read their own mission_instances row';
+  -- mission_instances/mission_events are fully server-only as of
+  -- 20260826010000_system_wide_least_privilege_hardening.sql — no
+  -- direct client access at all, not even to the owner's own row. The
+  -- real Flutter client never reads/writes either table directly
+  -- (every command goes through the Edge Functions -> SECURITY
+  -- DEFINER forge_* functions instead — see that migration's own
+  -- header for the full finding), so this is a *stronger* invariant
+  -- than the previous "owner-only" isolation this test used to check.
+  -- See supabase/tests/016_least_privilege_hardening.sql for the full
+  -- exploit-style regression coverage of that finding; this assertion
+  -- just confirms the plain owner-read case specifically, in the same
+  -- place the old assertion used to live.
+  begin
+    perform 1 from public.mission_instances where id = instance_a;
+    raise exception 'FAIL: user_a could read their own mission_instances row directly '
+      '(should be fully server-only now)';
+  exception
+    when insufficient_privilege then null;
+    when others then
+      if sqlerrm like 'FAIL:%' then raise; end if;
+      if sqlerrm not ilike '%permission denied%' then raise; end if;
+  end;
+  raise notice 'PASS: even the owning user cannot read mission_instances directly (fully server-only)';
 
   -- --- act as user_b ----------------------------------------------------
   perform set_config('request.jwt.claims', json_build_object('sub', user_b::text, 'role', 'authenticated')::text, true);
   perform set_config('request.jwt.claim.sub', user_b::text, true);
 
-  if exists (select 1 from public.mission_instances where id = instance_a) then
+  begin
+    perform 1 from public.mission_instances where id = instance_a;
     raise exception 'FAIL: user_b can read user_a''s mission_instances row';
-  end if;
+  exception
+    when insufficient_privilege then null;
+    when others then
+      if sqlerrm like 'FAIL:%' then raise; end if;
+      if sqlerrm not ilike '%permission denied%' then raise; end if;
+  end;
   raise notice 'PASS: user_b cannot read user_a''s private mission data';
-
-  update public.mission_instances set status = 'abandoned' where id = instance_a;
-  get diagnostics affected_rows = row_count;
-  if affected_rows <> 0 then
-    raise exception 'FAIL: user_b updated user_a''s mission_instances row (% rows)', affected_rows;
-  end if;
-  raise notice 'PASS: user_b cannot update user_a''s mission_instances row';
 
   -- Nested block: exception handling scoped to *only* this one risky
   -- statement, so a genuine failure in any earlier assertion above still
@@ -101,7 +119,7 @@ begin
       instance_a, user_b, 'forged-command', 'forged-key', 1, 'accepted', now()
     );
     raise exception 'FAIL: user_b inserted a mission_events row for user_a''s '
-      'mission (should have been rejected by the ownership trigger)';
+      'mission (should have been rejected)';
   exception
     when others then
       if sqlerrm like 'FAIL:%' then
