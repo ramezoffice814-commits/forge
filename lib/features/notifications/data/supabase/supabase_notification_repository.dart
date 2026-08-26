@@ -14,6 +14,16 @@ import 'notification_row_mapper.dart';
 class SupabaseNotificationRepository implements NotificationRepository {
   const SupabaseNotificationRepository(this._client);
 
+  /// `notifications` has no retention/archival policy (Roadmap Item 18
+  /// production-readiness audit — see docs/RELEASE_READINESS.md) and
+  /// this query runs on every inbox load, so it's bounded rather than
+  /// pulling a long-lived, active user's entire unbounded history every
+  /// time. 200 rows is generous for what's actually shown (recent
+  /// achievement/level-up/week/season/weekly-recap rows) — a real
+  /// retention/archival migration is a separate, larger piece of work,
+  /// not something to invent here.
+  static const _fetchLimit = 200;
+
   final supa.SupabaseClient _client;
 
   String get _userId => _client.auth.currentUser!.id;
@@ -24,7 +34,8 @@ class SupabaseNotificationRepository implements NotificationRepository {
         .from('notifications')
         .select()
         .eq('user_id', _userId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .limit(_fetchLimit);
 
     return rows
         .map((row) => parseNotificationRow(row))
