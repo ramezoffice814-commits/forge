@@ -89,4 +89,67 @@ void main() {
       },
     );
   });
+
+  group('nextEligibleTime (Roadmap Item 17 section 9 — scheduling defer)', () {
+    test('a candidate outside quiet hours is returned unchanged', () {
+      const quietHours = QuietHours(
+        enabled: true,
+        startMinute: 1350,
+        endMinute: 420,
+      );
+      final candidate = DateTime(2026, 8, 25, 12, 0);
+      expect(quietHours.nextEligibleTime(candidate), candidate);
+    });
+
+    test('disabled quiet hours never defer anything', () {
+      const quietHours = QuietHours(
+        enabled: false,
+        startMinute: 1350,
+        endMinute: 420,
+      );
+      final candidate = DateTime(2026, 8, 25, 23, 0);
+      expect(quietHours.nextEligibleTime(candidate), candidate);
+    });
+
+    test('a same-day window defers to end-of-window on the same day', () {
+      const quietHours = QuietHours(
+        enabled: true,
+        startMinute: 780, // 13:00
+        endMinute: 1020, // 17:00
+      );
+      final candidate = DateTime(2026, 8, 25, 15, 0);
+      expect(
+        quietHours.nextEligibleTime(candidate),
+        DateTime(2026, 8, 25, 17, 0),
+      );
+    });
+
+    test('an overnight window (22:30 -> 07:00) hit late at night defers to '
+        '07:00 the next morning', () {
+      const quietHours = QuietHours(
+        enabled: true,
+        startMinute: 1350,
+        endMinute: 420,
+      );
+      final candidate = DateTime(2026, 8, 25, 23, 0);
+      expect(
+        quietHours.nextEligibleTime(candidate),
+        DateTime(2026, 8, 26, 7, 0),
+      );
+    });
+
+    test('an overnight window hit just after midnight defers to 07:00 that '
+        'same morning, not the following day', () {
+      const quietHours = QuietHours(
+        enabled: true,
+        startMinute: 1350,
+        endMinute: 420,
+      );
+      final candidate = DateTime(2026, 8, 26, 2, 0);
+      expect(
+        quietHours.nextEligibleTime(candidate),
+        DateTime(2026, 8, 26, 7, 0),
+      );
+    });
+  });
 }
