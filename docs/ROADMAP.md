@@ -278,9 +278,89 @@ for them (would have no real effect). No server-backed preference or
 schema changed in this item — only a local storage key scheme — so Deno,
 SQL, and staging verification are not applicable here.
 
+### 17 — OS-Level Local Notifications
+Real device notifications for Forge's three client-owned reminder types
+(Daily Mission, Daily Transmission, Mission Follow-up), built entirely on
+top of Item 15's existing notification domain rather than beside it:
+`LocalNotificationService` (`lib/features/notifications/domain/
+repositories/`) is the one seam between Forge and an actual device
+notification tray — a real `flutter_local_notifications`-backed
+implementation on Android and Windows, and an honest no-op on Web (see
+below). `LocalNotificationScheduler` translates already-decided
+`ForgeNotification`s into OS calls: it makes no eligibility decisions of
+its own — `NotificationPreferences.allows`/`QuietHours.isQuietAt`/
+`LocalReminderEngine` (all Item 15) remain the only source of "should
+this be shown."
+
+Daily Mission and Daily Transmission are mirrored to the OS via an
+immediate `showNow()` exactly when `LocalReminderEngine` already decides
+they're due for the in-app inbox — no invented fixed clock-time policy
+(e.g. "always remind at 9am") that Item 15 never specified. Mission
+Follow-up is the one reminder with a genuinely well-defined future
+instant (`acceptedAt + followupMinimumAge`, both pre-existing Item 15
+constants) and gets real advance scheduling instead, deferred out of
+quiet hours via a new `QuietHours.nextEligibleTime` and automatically
+cancelled once the mission completes or preferences change — all keyed
+by a stable, deterministic OS notification id derived from the existing
+dedup key (never random), so rescheduling replaces rather than
+duplicates. Tapping a notification reuses Item 15's own closed
+`NotificationDeepLink` mapping unchanged — a payload is only ever a
+`ForgeNotificationType`'s wire name, parsed through the same
+`tryParse`/`forType` functions the in-app inbox already uses, so a
+forged or unrecognized payload safely no-ops rather than navigating
+anywhere.
+
+Client-owned local reminders and their OS mirroring work fully offline
+by design (no network dependency in `LocalReminderEngine` itself) —
+verified by restructuring `NotificationInboxController._load()` so a
+failed server fetch still surfaces the existing retryable error state
+for the in-app inbox, but no longer blocks the local-reminder/OS-sync
+path that used to be sequenced after it. Account-switch isolation is
+enforced by cancelling every locally-scheduled OS reminder on sign-out.
+
+**Platform support** (spec section 3 — no assumed parity):
+- **Android**: full support via the plugin's `NotificationCompat` APIs.
+  Uses `AndroidScheduleMode.inexactAllowWhileIdle` deliberately — no
+  `SCHEDULE_EXACT_ALARM` permission requested, since these are
+  reminders, not time-critical alarms. `POST_NOTIFICATIONS` is declared
+  and requested only from an explicit Settings action, never
+  automatically.
+- **Windows**: genuinely supported by the plugin (C++/WinRT toast
+  notifications), with two real, documented limitations rather than
+  hidden ones: no repeating notifications (not used here — every
+  schedule is an explicit one-shot instant) and `cancel()`/
+  `getActiveNotifications()` are no-ops without MSIX packaging, which
+  this app doesn't use — cancellation there is best-effort.
+- **Web**: a deliberate no-op. `flutter_local_notifications` technically
+  ships a Web implementation, but it leans on a service worker for
+  consistent tap-handling — close enough to the "web push
+  infrastructure" this item was explicitly told not to add that treating
+  it as in scope would stretch that instruction rather than honor it.
+  Web keeps the existing in-app inbox only, with an honest "not
+  available on this platform" in Settings.
+
+**Explicitly out of scope this pass**: server-authoritative notification
+types (achievement/level-up/competition/weekly recap) are not mirrored
+to the OS — they remain in-app-inbox-only, pull-based, exactly as Item
+15 shipped them; extending OS delivery to them would need a dedup story
+spanning server-originated ids, which this item deliberately didn't take
+on. Scheduled reminders do not survive a full device reboot (only a
+normal app restart/backgrounding) — `flutter_local_notifications` has no
+built-in boot-rescheduling for `zonedSchedule`, and the spec's own
+conditional language ("implement only if supported cleanly by the
+plugin") permits skipping a hand-rolled boot receiver for it. No
+Android emulator/device or unlocked Windows Developer Mode was available
+in the environment this item was built in, so real-device/emulator
+smoke testing is honestly unverified — reported as such rather than
+assumed.
+
+**Classification: COMPLETE within the scope above.** Regression suite
+green (see the PR); no Deno/SQL/staging verification needed — no server
+schema or RPC changed, only client-side scheduling logic.
+
 ## Next
 
-Item 17 has not yet been scoped.
+Item 18 has not yet been scoped.
 
 ## Further Out
 
@@ -288,8 +368,9 @@ Named as future direction, not committed scope or timelines:
 
 - Real AI-generated character dialogue, replacing the current mock
   scripts.
-- OS-level local push and remote push notifications (FCM/APNs/web
-  push) — Item 15 shipped in-app inbox only.
+- Remote push notifications (FCM/APNs/web push) and OS delivery for
+  server-authoritative notification types — Item 17 shipped OS-level
+  local notifications for the three client-owned reminder types only.
 - Optional re-engagement notifications (Item 15's type H).
 - Real account deletion, once a backend deletion flow exists (Item 16
   intentionally left the existing honest placeholder in place rather than
@@ -297,6 +378,9 @@ Named as future direction, not committed scope or timelines:
 - Theme (light/dark) and locale/i18n support, if ever prioritized —
   neither exists today, so Item 16's Settings screen has nothing to
   surface for them yet.
+- A device-reboot-surviving reschedule path for Mission Follow-up
+  (requires a native Android boot receiver the current plugin doesn't
+  provide out of the box).
 - Monetization.
 - Production deployment (only after Item 13 is complete and reviewed).
 - iOS/macOS/Linux platform targets (only Android, Web, and Windows exist

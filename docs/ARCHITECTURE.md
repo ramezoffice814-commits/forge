@@ -262,17 +262,15 @@ confirmation. `NotificationInboxController` merges both sources into
 one list, filtered through `NotificationPreferences.allows()` before
 it ever reaches the UI.
 
-Delivery is in-app inbox only this pass, not OS/remote push — no
-`flutter_local_notifications`, no FCM/APNs/web push. This was a
-deliberate scope decision (the spec's own priority ordering places a
-working domain/persistence/inbox/preferences layer ahead of any push
-channel, and a new provider/paid plan is explicitly a stop-and-report
-condition, not something to add unprompted) rather than an oversight;
-see `NotificationInboxController`'s doc comment for how quiet hours
-relates to this (it gates the three client-owned reminder types at
-creation time — the one place they could otherwise interrupt the user
-— and currently has nothing further to gate for server-authoritative
-rows, since the pull-based inbox has no interrupt channel to defer).
+Delivery was in-app inbox only through Item 15 — Item 17 (below) added
+real OS-level local notifications for the three client-owned reminder
+types on top of this same domain layer, without changing anything
+described above: `NotificationPreferences.allows()`/quiet hours/
+`LocalReminderEngine` remain the only source of "should this be shown,"
+regardless of which channel eventually presents it. Remote push
+(FCM/APNs/web push) and OS delivery for server-authoritative types
+(achievement/level-up/competition/weekly recap) remain out of scope —
+see Item 17's own section for exactly why.
 
 **Platform behavior** — the three platforms this repo actually
 targets (`android/`, `web/`, `windows/`; no `ios/`/`macos`/`linux`
@@ -290,8 +288,67 @@ directory exists):
   web backend persists into the browser's own storage rather than a
   real OS keystore — a pre-existing characteristic of every other
   secure-storage use in this app (auth session, onboarding flag),
-  not something Item 15 introduces or changes. OS/remote push is not
-  implemented on any platform this pass, so there is no push-specific
-  web capability (Notification API permission, service worker) to
-  degrade — the gap is uniform across all three targets, not a
-  web-specific limitation.
+  not something Item 15 introduces or changes.
+
+## OS-Level Local Notifications (Roadmap Item 17)
+
+`LocalNotificationService` (`lib/features/notifications/domain/
+repositories/local_notification_service.dart`) is the single seam
+between the notification domain above and an actual device notification
+tray — a real `flutter_local_notifications`-backed
+`PluginLocalNotificationService` on Android/Windows, an honest
+`UnsupportedLocalNotificationService` no-op everywhere else (Web
+today). `LocalNotificationScheduler` (`data/local_notification/`) is the
+only thing that calls it, and makes no eligibility decisions of its own
+— it translates a `ForgeNotification` Item 15's own domain already
+approved into a `showNow`/`schedule`/`cancel` call, nothing more.
+
+**Platform support is not uniform, by design, not oversight**:
+
+- **Android**: full support (`NotificationCompat`). Scheduling uses
+  `AndroidScheduleMode.inexactAllowWhileIdle` — no `SCHEDULE_EXACT_ALARM`
+  permission, since these are reminders, not alarms. `POST_NOTIFICATIONS`
+  (Android 13+) is requested only from an explicit Settings tap, never
+  automatically, and never repeated once denied.
+- **Windows**: full support via the plugin's C++/WinRT toast
+  notifications, with two real, documented limitations: no repeating
+  notifications (unused here — every schedule is a one-shot instant)
+  and `cancel()`/`getActiveNotifications()` silently no-op without MSIX
+  packaging, which this app doesn't use.
+- **Web**: deliberately unsupported. The plugin's own Web
+  implementation leans on a service worker for consistent tap-handling
+  — close enough to the "web push infrastructure" this item was told
+  not to add that treating it as in scope would be a stretch, not a
+  good-faith reading. The existing in-app inbox remains Web's only
+  notification surface.
+
+Every plugin call in `PluginLocalNotificationService` is wrapped so a
+platform/plugin failure degrades to reporting itself unsupported rather
+than throwing — this is also what keeps `ForgeApp`'s unconditional
+`ref.watch(osNotificationBootstrapProvider)` safe to run under `flutter
+test`, where no real platform channel handler exists.
+
+Mission Follow-up is the one reminder with a genuine future fire
+instant (`acceptedAt + LocalReminderEngine.followupMinimumAge`) and gets
+real advance `schedule()`, deferred out of quiet hours by
+`QuietHours.nextEligibleTime`. Daily Mission/Transmission are mirrored
+via an immediate `showNow()` exactly when `LocalReminderEngine` already
+decides they're due — deliberately not given an invented fixed
+clock-time policy Item 15 never specified. Every OS notification id is
+derived deterministically from the existing Item 15 dedup key
+(`LocalNotificationScheduler.stableId`), never random, so rescheduling
+replaces rather than duplicates and cancellation is exact. Tapping a
+notification decodes its payload through the exact same
+`ForgeNotificationType.tryParse`/`NotificationDeepLink.forType`
+functions the in-app inbox already uses — a payload is never a raw
+route string, and an unrecognized one safely no-ops.
+
+**Known limitations, stated rather than hidden**: server-authoritative
+notification types are not mirrored to the OS this pass (in-app-inbox
+only, as Item 15 shipped them); a scheduled reminder does not survive a
+full device reboot (only an app restart) — `flutter_local_notifications`
+has no built-in boot-rescheduling for `zonedSchedule`, and adding a
+hand-rolled Android boot receiver was out of scope; no real Android
+emulator/device or Windows Developer Mode was available in the
+environment this item was built in, so real-device smoke testing is
+unverified rather than assumed passing.
