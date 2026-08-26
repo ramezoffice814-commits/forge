@@ -47,8 +47,18 @@ begin
     raise exception 'FAIL: an exact retry returned a different result than the original';
   end if;
 
+  -- mission_events is fully server-only as of 20260826010000_system_
+  -- wide_least_privilege_hardening.sql — even the owning authenticated
+  -- user has no direct SELECT, so this verification read (test-harness
+  -- code checking an outcome, not the app itself) needs the same
+  -- elevated role every other privileged setup/verification step in
+  -- this suite already uses.
+  set local role postgres;
   select count(*) into event_count from public.mission_events
   where mission_instance_id = instance_a and event_type = 'accepted';
+  set local role authenticated;
+  perform set_config('request.jwt.claims', json_build_object('sub', user_a::text, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', user_a::text, true);
   if event_count <> 1 then
     raise exception 'FAIL: a retried accept produced % accepted events, expected exactly 1', event_count;
   end if;

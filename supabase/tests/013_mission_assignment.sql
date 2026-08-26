@@ -49,7 +49,16 @@ begin
   if (result_2 ->> 'missionInstanceId') <> (result_1 ->> 'missionInstanceId') then
     raise exception 'FAIL: a second assignment request for the same day created a different instance';
   end if;
+  -- mission_instances is fully server-only as of 20260826010000_
+  -- system_wide_least_privilege_hardening.sql — this verification read
+  -- (test-harness code checking an outcome, not the app itself) needs
+  -- the same elevated role every other privileged setup/verification
+  -- step in this suite already uses.
+  set local role postgres;
   select count(*) into instance_count from public.mission_instances where user_id = user_a and mission_date = current_date;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', json_build_object('sub', user_a::text, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', user_a::text, true);
   if instance_count <> 1 then
     raise exception 'FAIL: expected exactly 1 mission_instances row for today, found %', instance_count;
   end if;
@@ -92,17 +101,28 @@ begin
   end if;
   raise notice 'PASS: assignment date is server-derived (no client-suppliable date parameter exists)';
 
-  -- (5) A different user cannot read User A's private assignment.
+  -- (5) A different user cannot read User A's private assignment — in
+  -- fact, as of 20260826010000_system_wide_least_privilege_hardening.sql,
+  -- mission_instances is fully server-only, so *no* authenticated user
+  -- (not just a different one) can read it directly at all; confirm
+  -- User B's own attempt is rejected at the grant level, not merely
+  -- RLS-filtered to zero rows.
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', user_b::text, 'role', 'authenticated')::text, true);
   perform set_config('request.jwt.claim.sub', user_b::text, true);
 
-  if exists (
-    select 1 from public.mission_instances where id = (result_1 ->> 'missionInstanceId')::uuid
-  ) then
-    raise exception 'FAIL: User B can read User A''s private mission_instances row';
+  caught := false;
+  begin
+    perform 1 from public.mission_instances where id = (result_1 ->> 'missionInstanceId')::uuid;
+  exception
+    when insufficient_privilege then caught := true;
+    when others then
+      if sqlerrm ilike '%permission denied%' then caught := true; else raise; end if;
+  end;
+  if not caught then
+    raise exception 'FAIL: User B could read mission_instances directly (should be fully server-only)';
   end if;
-  raise notice 'PASS: a different user cannot read another user''s assignment (RLS)';
+  raise notice 'PASS: a different user cannot read another user''s assignment (fully server-only, not just RLS-filtered)';
 
   -- (6) auth.uid() alone determines ownership — there is no user-id
   -- parameter on forge_assign_daily_mission at all for a client to
@@ -110,18 +130,26 @@ begin
   -- it is not expressible. Confirm User B's own assignment is owned by
   -- User B, not User A, when called as User B.
   select public.forge_assign_daily_mission('cmd-4', 'key-4', 'hash-4', null, null) into result_2;
+  set local role postgres;
   if not exists (
     select 1 from public.mission_instances
     where id = (result_2 ->> 'missionInstanceId')::uuid and user_id = user_b
   ) then
     raise exception 'FAIL: User B''s assignment was not owned by User B';
   end if;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', json_build_object('sub', user_b::text, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', user_b::text, true);
   raise notice 'PASS: assignment is always owned by auth.uid() — no client-suppliable user id exists to misuse';
 
   -- (7) The deterministic fallback (no requested mission) still
   -- prevents a duplicate active daily mission for User B on retry.
   select public.forge_assign_daily_mission('cmd-5', 'key-5', 'hash-5', null, null) into result_2;
+  set local role postgres;
   select count(*) into instance_count from public.mission_instances where user_id = user_b and mission_date = current_date;
+  set local role authenticated;
+  perform set_config('request.jwt.claims', json_build_object('sub', user_b::text, 'role', 'authenticated')::text, true);
+  perform set_config('request.jwt.claim.sub', user_b::text, true);
   if instance_count <> 1 then
     raise exception 'FAIL: duplicate active daily mission was created for User B (found %)', instance_count;
   end if;
