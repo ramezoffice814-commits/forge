@@ -204,6 +204,32 @@ create trigger on_auth_user_created_notification_preferences
   for each row
   execute function public.handle_new_user_notification_preferences();
 
+-- Postgres grants EXECUTE to the PUBLIC pseudo-role by default on
+-- function creation, never revoked automatically — for a trigger
+-- function this is pure unnecessary attack surface (PostgREST exposes
+-- every public-schema function as an RPC endpoint regardless of it
+-- being trigger-only; calling it directly fails at the Postgres level
+-- since it has no `NEW` record outside a real trigger invocation, but
+-- there is no reason to leave the RPC path reachable at all). Matches
+-- 20260821090300_revoke_trigger_functions_from_public.sql's own fix
+-- for handle_new_user()/handle_new_user_progression() exactly.
+--
+-- CRITICAL, confirmed live against staging (see the Item 15 PR
+-- description): `revoke ... from public` alone is NOT sufficient on a
+-- real hosted Supabase project. 20260821090200_revoke_server_only_
+-- functions.sql already documented the root cause once before — a real
+-- project runs `ALTER DEFAULT PRIVILEGES ... GRANT EXECUTE ON FUNCTIONS
+-- TO anon, authenticated, service_role;` outside this repo's
+-- migrations, so every freshly CREATEd function gets EXECUTE for
+-- anon/authenticated directly, not via the PUBLIC pseudo-role — a
+-- revoke from public never touches it. The local CLI Postgres doesn't
+-- reproduce this, so this class of bug is invisible to `supabase db
+-- reset` and only surfaces once actually deployed; verified via
+-- information_schema.routine_privileges before and after this line
+-- against forge-staging directly, not just by re-reading this comment.
+revoke execute on function public.handle_new_user_notification_preferences()
+  from public, anon, authenticated;
+
 -- Backfill: every already-existing user gets a default-preferences row
 -- too, so this feature works immediately for accounts created before
 -- this migration ran (staging already has synthetic test users).
@@ -239,6 +265,7 @@ create or replace function public.forge_create_notification(
 )
 returns void
 language plpgsql
+set search_path = public
 as $$
 declare
   v_inserted boolean;
@@ -258,7 +285,19 @@ begin
 end;
 $$;
 
-revoke all on function public.forge_create_notification(uuid, text, text, jsonb) from public;
+-- Same ALTER DEFAULT PRIVILEGES issue as
+-- handle_new_user_notification_preferences() above — `from public`
+-- alone leaves this callable by anon/authenticated on a real hosted
+-- project. This is the single most important revoke in this entire
+-- migration: forge_create_notification is the one function that must
+-- never be client-callable at all, for any reason — every server-
+-- authoritative notification type exists specifically because a client
+-- can't mint one itself, and a live EXECUTE grant here would have made
+-- "forge an achievement/level-up/competition notification for any
+-- user" a one-line RPC call. Confirmed exploitable against staging
+-- before this fix, confirmed closed after it.
+revoke all on function public.forge_create_notification(uuid, text, text, jsonb)
+  from public, anon, authenticated;
 
 -- =======================================================================
 -- forge_submit_mission — re-created with two additive notification
