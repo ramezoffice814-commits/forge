@@ -26,6 +26,7 @@ class LevelBadge extends StatelessWidget {
       label:
           'Level $levelNumber, $levelTitle. '
           '${(progressToNextLevel * 100).round()} percent to next level.',
+      excludeSemantics: true,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

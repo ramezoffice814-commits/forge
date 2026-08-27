@@ -32,6 +32,7 @@ class SettingsAccessibilitySection extends StatelessWidget {
           label: reducedMotion
               ? 'Reduced motion is on, following your device setting'
               : 'Reduced motion is off, following your device setting',
+          excludeSemantics: true,
           child: Row(
             children: [
               Icon(

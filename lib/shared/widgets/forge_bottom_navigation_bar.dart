@@ -94,6 +94,7 @@ class _ForgeTab extends StatelessWidget {
       button: true,
       selected: selected,
       label: item.label,
+      excludeSemantics: true,
       child: InkWell(
         onTap: onTap,
         child: Padding(

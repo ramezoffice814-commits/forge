@@ -28,6 +28,7 @@ class LeaderboardEntryTile extends StatelessWidget {
           'Rank ${entry.rank}, ${entry.displayName}, '
           '${entry.weeklyScore.toStringAsFixed(0)} points'
           '${isCurrentUser ? ', this is you' : ''}',
+      excludeSemantics: true,
       child: Container(
         padding: EdgeInsets.symmetric(
           horizontal: tokens.spacing.space3,

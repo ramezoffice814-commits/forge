@@ -37,6 +37,7 @@ class AchievementCard extends StatelessWidget {
 
     return Semantics(
       label: '$displayName. $statusLabel.',
+      excludeSemantics: true,
       child: ForgeCard(
         children: [
           Row(
