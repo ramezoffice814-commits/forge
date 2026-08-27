@@ -462,17 +462,79 @@ Final legal-content approval and an Android AAB build remain open too.
 Not "BLOCKED" either — nothing here is stuck pending a decision within
 this item's own control.
 
+### 20 — Production Release & Store Submission Prep
+Prepared Forge for a genuine production/store release while preserving
+strict human approval gates around signing keys, legal content,
+production infrastructure, store accounts, and final submission — this
+item does not deploy production or submit to any store. Full
+area-by-area record in
+[docs/RELEASE_CANDIDATE_2.md](RELEASE_CANDIDATE_2.md); final gate
+breakdown in [docs/PRODUCTION_GO_NO_GO.md](PRODUCTION_GO_NO_GO.md).
+
+Real work landed: an Android AAB CI job (`android-aab-build` — Play
+Store submission needs an `.aab`, which a passing APK build doesn't by
+itself prove); a genuine, previously-undiscovered fix — `android/app/
+src/main/AndroidManifest.xml` never declared `android.permission.
+INTERNET`, only the `debug`/`profile` overlay manifests did (Flutter's
+own dev-connection boilerplate, which doesn't carry into `release`),
+and no plugin's own manifest supplied it as a merger fallback either;
+a real release build would have been unable to make any Supabase
+network call the moment live mode was ever used, invisible until now
+because the app has only ever run in mock mode; a fuller accessibility
+pass (13 concrete double-announcement fixes — `Semantics(label: ...)`
+without `excludeSemantics: true`, causing a screen reader to announce
+the same information twice — found by auditing all 33 files using
+`Semantics(` in `lib/`, not by guessing from zero-occurrence counts);
+the RC version bump (`1.0.0-rc.1+2` → `1.0.0-rc.2+3`); and six new
+documents ([docs/PRODUCTION_CONFIG.md](PRODUCTION_CONFIG.md),
+[docs/DATA_RETENTION_DECISIONS.md](DATA_RETENTION_DECISIONS.md),
+[docs/ACCOUNT_DELETION_DESIGN.md](ACCOUNT_DELETION_DESIGN.md),
+[docs/STORE_ASSET_REQUIREMENTS.md](STORE_ASSET_REQUIREMENTS.md),
+[docs/PLAY_STORE_PREP.md](PLAY_STORE_PREP.md) — including draft store
+copy marked DRAFT/REQUIRES HUMAN APPROVAL, a screenshot plan, and a
+factual Data Safety engineering inventory — and
+[docs/PRODUCTION_GO_NO_GO.md](PRODUCTION_GO_NO_GO.md)).
+
+Confirmed-absent, documented rather than invented: a production
+Android signing key (none generated, per this item's own explicit
+instruction), approved legal content, real brand assets (icon/splash/
+feature graphic/screenshots — still stock Flutter defaults), a hosted
+Privacy Policy URL, a Play Store developer account and its associated
+declarations, and a real account-deletion implementation (design-only
+document produced, `requestAccountDeletion()` unchanged). Android
+real-device and Windows launched-and-interacted-with verification
+remain unavailable in this environment, unchanged since Items 17–19.
+
+**Classification: PARTIALLY VERIFIED.** No P0 blocker, full regression
+green (Flutter 978 passed/2 skipped/0 failed, Golden 18/18, SQL 16/16,
+Deno 25/25), one genuine networking-permission gap found and fixed,
+secret scan clean. Not "COMPLETE" (in the release-*preparation* sense
+this item defines, not a claim Forge has been published): production
+signing ownership, legal approval, store assets, a hosted Privacy
+Policy URL, and several store declarations are all AWAITING HUMAN
+ACTION or BLOCKED — see
+[docs/PRODUCTION_GO_NO_GO.md](PRODUCTION_GO_NO_GO.md)'s explicit
+**NO-GO** determination for the full gate-by-gate reasoning. Not
+"BLOCKED" either — nothing here is stuck pending a decision within
+this item's own control; every gap needs a credential, a device, a real
+keystore, a store account, or a human legal/business decision this
+item correctly declined to invent.
+
 ## Next
 
-Item 20 has not yet been scoped. Candidates surfaced by Item 19's own
-checklist: real Android release signing once a keystore is provided
-(plus the Play Store submission prep that unlocks) and an Android AAB
-CI job; authored/approved Terms of Service and Privacy Policy content;
-a real staging smoke test once credentials are available; genuine
-Android real-device (or cloud device farm) and Windows launched-and-
-interacted-with verification; a `notifications`/`LocalReminderStore`
-retention policy; a full accessibility pass beyond the two screens
-Item 19 targeted.
+Item 21 has not yet been scoped. Candidates surfaced by Item 20's own
+gate document: closing each NO-GO condition in
+[docs/PRODUCTION_GO_NO_GO.md](PRODUCTION_GO_NO_GO.md) once the
+corresponding human/business input exists (a real signing key, approved
+legal content, real brand assets and screenshots, a hosted Privacy
+Policy, a Play Store developer account); implementing real account
+deletion per the design in
+[docs/ACCOUNT_DELETION_DESIGN.md](ACCOUNT_DELETION_DESIGN.md) once the
+anonymize-vs-cascade decision is made; a chosen retention policy per
+[docs/DATA_RETENTION_DECISIONS.md](DATA_RETENTION_DECISIONS.md); a real
+staging smoke test once credentials are available; and genuine Android
+real-device (or cloud device farm) and Windows launched-and-interacted-
+with verification.
 
 ## Further Out
 
