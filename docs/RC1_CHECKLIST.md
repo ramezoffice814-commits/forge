@@ -22,9 +22,9 @@ versioning strategy this establishes — no prior policy existed).
 | Android signing | BLOCKED (by design) | No production keystore exists; not generated here. Signing config is safely prepared (`android/key.properties.example`, `.gitignore` coverage confirmed both root and `android/` level, Gradle fails clearly on an incomplete `key.properties`, falls back to debug-signing only when no `key.properties` exists at all). |
 | Android real-device run | BLOCKED | No Android emulator/device available in this environment (`flutter devices`/`flutter emulators`/`adb devices` all confirm none) — unchanged since Item 17/18. |
 | Android notification smoke | BLOCKED | Depends on the real-device run above; not independently verifiable via SQL/API alone per this item's own instruction. |
-| Windows build | BLOCKED | Developer Mode/symlink support disabled on this machine; not toggled (system-setting change requiring explicit permission). Unchanged since Item 18. |
-| Windows real run | BLOCKED | Depends on the build above. |
-| Web release smoke | PASS (earlier this session) / UNVERIFIED (final pass) | See "Release build results" below — a real environment blocker appeared partway through this session's final verification pass. |
+| Windows build | PASS (via CI) | This PR's new `windows-build` CI job built successfully on a GitHub-hosted runner (10m31s), proving this local machine's Developer Mode gate is machine-specific, not a project defect. |
+| Windows real run | BLOCKED | A launched, interacted-with run (not just a build) is still unverified — this local machine's own Developer Mode remains disabled, unchanged since Item 18. |
+| Web release smoke | PASS | Built and smoke-tested locally earlier this session and in Item 18; confirmed again via this PR's `web-build` CI job (3m5s). |
 | Staging live auth | BLOCKED | No real `SUPABASE_ANON_KEY`/synthetic test-user credentials available in this environment — unchanged since Item 18. |
 | Staging mission flow | BLOCKED | Same credential gate. |
 | Staging AI mock flow | BLOCKED | Same credential gate. |
@@ -40,7 +40,7 @@ versioning strategy this establishes — no prior policy existed).
 | Secrets | PASS | Full secret scan clean — see "Secret scan" below. |
 | Versioning | PASS | RC strategy defined and applied (`1.0.0-rc.1+2`); no prior policy existed to conflict with. |
 | Package identity | PASS (audited, unchanged) | `com.forge.app.forge` (Android), Windows product naming, Web title/manifest all reviewed — none renamed (an established identity change needs explicit review, per this item's own instruction). |
-| Release artifact provenance | PARTIAL | Android APK built successfully once this session (56.8MB, debug-signed, `app-release.apk`) before an environment blocker appeared — see "Release build results." |
+| Release artifact provenance | PASS (build) | Android/Web/Windows all confirmed building successfully — once locally (Android, with the actual artifact: 56.8MB `app-release.apk`) and all three independently via this PR's CI. AAB not yet attempted (no build job for it yet). None are production-signed or store-submission-ready. |
 
 ## Android signing
 
@@ -116,11 +116,19 @@ honestly each time rather than assumed.
 
 ## Windows real verification
 
-**BLOCKED**, unchanged reason: `flutter build windows --release` fails
-immediately with "Building with plugins requires symlink support.
-Please enable Developer Mode." This machine's Developer Mode was not
-toggled — that's a system-setting change requiring explicit permission
-this item's own instructions say not to make unprompted.
+**Build: PASS (via CI), on this local machine specifically: BLOCKED.**
+Locally, `flutter build windows --release` fails immediately with
+"Building with plugins requires symlink support. Please enable
+Developer Mode." — this machine's Developer Mode was not toggled,
+matching this item's own instruction not to make that system-setting
+change unprompted. However, this PR's own CI (`windows-build`, added
+this pass) built the identical code successfully on a GitHub-hosted
+`windows-latest` runner in 10m31s — confirming the Developer Mode gate
+is specific to this one local machine's configuration, not to the
+project or its Windows build config. **A real, launched, interacted-
+with run on Windows (as opposed to a successful build) remains
+unverified** — CI proves the executable builds, not that it launches
+correctly, shows the auth UI, or behaves correctly once running.
 
 ## Release build results
 
@@ -155,19 +163,30 @@ Three release builds were attempted this session, in this order:
    it did not fail instantly; it ran for 47m48s before failing, a
    materially different symptom (a hang/timeout somewhere in the build,
    most plausibly network-dependent, rather than an instant policy
-   block). Not retried further after this — two different failure
-   modes across four attempts is itself strong evidence this machine's
-   build environment is genuinely degraded right now, not something
-   worth continuing to fight without touching security settings.
+   block). Not retried further locally after this — two different
+   failure modes across four attempts is itself strong evidence this
+   one machine's build environment was genuinely degraded at the time,
+   not something worth continuing to fight without touching security
+   settings.
+6. **Independent confirmation via CI**: once this PR was opened, its
+   own new `android-build`/`web-build`/`windows-build` jobs (added this
+   pass) all ran successfully on GitHub-hosted runners against the
+   exact same commit — **Android: PASS (13m0s), Web: PASS (3m5s),
+   Windows: PASS (10m31s)**. This proves the code and build
+   configuration are genuinely correct and platform-build-ready; the
+   local machine's Application Control policy issue was specific to
+   that one machine's environment at that moment, not a defect in this
+   PR.
 
-**Honest classification: Android APK — PASS earlier this session with
-the exact code in this PR (before this environment blocker appeared),
-UNVERIFIED in the final pass. Android AAB — UNVERIFIED (never
-successfully attempted — the environment block appeared before this
-was reached). Web — PASS earlier (Item 18's own session, and again
-briefly at the start of this session before the block appeared),
-UNVERIFIED in the final pass. Windows — BLOCKED (unrelated, pre-existing
-Developer Mode gate).**
+**Honest classification: Android APK — PASS, confirmed both locally
+(early this session) and independently via this PR's own CI. Android
+AAB — UNVERIFIED (never attempted locally or in CI this pass — no AAB
+build job exists yet, see Proposed Item 20). Web — PASS, confirmed
+locally (Item 18's own session, and again briefly at the start of this
+session) and via CI. Windows — PASS via CI (build only, on a clean
+GitHub-hosted runner); a real, launched, interacted-with run remains
+UNVERIFIED, and this local machine specifically remains BLOCKED by its
+own disabled Developer Mode.**
 
 This is reported exactly as it happened — no result here was "turned
 into PASS" that wasn't independently verified at least once with the
@@ -423,14 +442,16 @@ No P0 security issue, full Flutter/SQL/Deno regression green, signing
 path safely prepared and explicitly blocked awaiting a user-owned key,
 legal/privacy routes exist with human-review blockers explicitly
 tracked, targeted accessibility fixes landed, CI gained real
-release-build coverage. Not "COMPLETE" because: Android real-device/
-Windows/staging verification remain genuinely blocked by this
-environment (unchanged from Item 18, honestly re-reported rather than
-glossed over), and a newly-appeared, environment-level Application
-Control policy prevented a final, fresh confirming release build in
-this session's last pass (though the exact current code was already
-verified to build successfully once, earlier in this same session).
-Not "BLOCKED" either — nothing here is stuck pending a decision within
-this item's own control; every remaining gap needs either a credential,
-a device, or a human legal/business decision this pass correctly
-declined to invent.
+release-build coverage — and that new CI coverage then independently
+confirmed all three platforms (Android, Web, Windows) build
+successfully on clean, GitHub-hosted runners, upgrading what would
+otherwise have been an unresolved local-environment question into a
+genuine, reproducible PASS for "does this code build." Not "COMPLETE"
+because: Android real-device and all staging-dependent verification
+remain genuinely blocked by missing hardware/credentials (unchanged
+from Item 18, honestly re-reported rather than glossed over), and a
+real, launched, interacted-with Windows run — as opposed to a
+successful build — is still unverified. Not "BLOCKED" either — nothing
+here is stuck pending a decision within this item's own control; every
+remaining gap needs either a credential, a device, or a human legal/
+business decision this pass correctly declined to invent.
