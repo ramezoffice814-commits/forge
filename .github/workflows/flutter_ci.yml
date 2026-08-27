@@ -3,12 +3,25 @@ name: Flutter CI
 # Validation only — no secrets required, no deployment, no artifact
 # publishing. Everything here runs in the app's default mock mode.
 #
-# Split into two jobs because golden (image-comparison) tests are
+# Split into two test jobs because golden (image-comparison) tests are
 # platform-rendering dependent: the committed baselines were generated on
 # Windows, so golden tests run on windows-latest to match, while every other
 # test (unit/domain/property/widget/integration-style) runs on ubuntu-latest
 # and must not be gated on OS-specific pixel output. See dart_test.yaml and
 # docs/ARCHITECTURE.md for the golden-test/font-determinism notes.
+#
+# Roadmap Item 19: three more jobs build (never sign, never publish) each
+# platform's release configuration — Item 18 proved that a fully green
+# test suite can still hide a broken release build (flutter_local_
+# notifications needed core library desugaring, which nothing here
+# caught until someone actually ran `flutter build apk --release`).
+# android-build/web-build/windows-build exist so that class of
+# regression fails a PR automatically instead of surfacing during a
+# manual release pass. None of them need or use a production signing
+# key: android/key.properties never exists in this environment, so the
+# Android release build falls back to the same debug-signing dev
+# convenience `flutter build apk --release` always has locally — see
+# android/app/build.gradle.kts's own comment on that fallback.
 on:
   pull_request:
     branches: [main, develop]
@@ -63,3 +76,69 @@ jobs:
 
       - name: Run golden tests
         run: flutter test --tags=golden
+
+  android-build:
+    name: Android Release Build (validation only, debug-signed)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # No android/key.properties in this environment, so this builds
+      # with the debug-signing fallback (see build.gradle.kts) — this
+      # job validates the build compiles, not that it's store-ready.
+      - name: Build release APK (debug-signed)
+        run: flutter build apk --release
+
+  web-build:
+    name: Web Release Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release Web bundle
+        run: flutter build web --release
+
+  windows-build:
+    name: Windows Release Build
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release Windows executable
+        run: flutter build windows --release

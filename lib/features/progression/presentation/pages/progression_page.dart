@@ -89,11 +89,19 @@ class _ProgressionContent extends ConsumerWidget {
             elevation: ForgeCardElevation.md,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ForgeProgressRing(
-                progress: aggregate.levelProgress,
-                child: Text(
-                  '${profile.currentLevel}',
-                  style: Theme.of(context).textTheme.headlineMedium,
+              Semantics(
+                label:
+                    'Level ${profile.currentLevel}, '
+                    '${(aggregate.levelProgress * 100).round()} percent to '
+                    'next level',
+                child: ForgeProgressRing(
+                  progress: aggregate.levelProgress,
+                  child: ExcludeSemantics(
+                    child: Text(
+                      '${profile.currentLevel}',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                  ),
                 ),
               ),
               SizedBox(height: tokens.spacing.space2),
@@ -118,7 +126,13 @@ class _ProgressionContent extends ConsumerWidget {
           SizedBox(height: tokens.spacing.space4),
           ForgeCard(
             children: [
-              Text('Title', style: Theme.of(context).textTheme.titleSmall),
+              Semantics(
+                header: true,
+                child: Text(
+                  'Title',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+              ),
               SizedBox(height: tokens.spacing.space1),
               Text(
                 profile.currentTitle.name,
@@ -136,9 +150,12 @@ class _ProgressionContent extends ConsumerWidget {
           if (profile.categoryProgress.isNotEmpty)
             ForgeCard(
               children: [
-                Text(
-                  'Category growth',
-                  style: Theme.of(context).textTheme.titleSmall,
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Category growth',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 ),
                 for (final progress in profile.categoryProgress.values)
                   CategoryProgressRow(progress: progress),

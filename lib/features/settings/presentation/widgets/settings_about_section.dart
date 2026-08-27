@@ -1,18 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/forge_tokens.dart';
 
-/// App identity — deliberately minimal. No legal/privacy links are
-/// shown here because no such page or route exists anywhere in this
-/// app yet; adding a placeholder link to nothing would be worse than
-/// omitting the section entirely. The version string is a plain
-/// constant, not read from a package (no `package_info_plus` dependency
-/// exists in this project) — keep it in sync with `pubspec.yaml`'s
-/// `version:` field by hand when that changes.
+/// App identity plus links to the (draft, pending-review) legal
+/// surfaces added in Roadmap Item 19 — real routes now exist
+/// (`PrivacyPolicyPage`/`TermsOfServicePage`), so this section links to
+/// them instead of omitting the links entirely as it did before those
+/// routes existed. The version string is a plain constant, not read
+/// from a package (no `package_info_plus` dependency exists in this
+/// project) — keep it in sync with `pubspec.yaml`'s `version:` field by
+/// hand when that changes.
 class SettingsAboutSection extends StatelessWidget {
   const SettingsAboutSection({super.key});
 
-  static const _version = '1.0.0+1';
+  static const _version = '1.0.0-rc.1+2';
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +32,20 @@ class SettingsAboutSection extends StatelessWidget {
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
             color: tokens.text.withValues(alpha: 0.6),
           ),
+        ),
+        SizedBox(height: tokens.spacing.space2),
+        Wrap(
+          spacing: tokens.spacing.space2,
+          children: [
+            TextButton(
+              onPressed: () => context.pushNamed(AppRouteNames.privacyPolicy),
+              child: const Text('Privacy'),
+            ),
+            TextButton(
+              onPressed: () => context.pushNamed(AppRouteNames.termsOfService),
+              child: const Text('Terms of Service'),
+            ),
+          ],
         ),
       ],
     );

@@ -69,4 +69,32 @@ void main() {
 
     expect(find.textContaining('not yet confirmed'), findsOneWidget);
   });
+
+  testWidgets('the level ring announces level and percent-to-next-level for a '
+      'screen reader, not just the bare level number visually shown '
+      'inside it (Roadmap Item 19 accessibility pass)', (tester) async {
+    final semanticsHandle = tester.ensureSemantics();
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    expect(
+      find.bySemanticsLabel(RegExp(r'Level \d+, \d+ percent to next level')),
+      findsOneWidget,
+    );
+    semanticsHandle.dispose();
+  });
+
+  testWidgets('Title and Category growth are exposed as semantic headers for '
+      'screen-reader section navigation', (tester) async {
+    final semanticsHandle = tester.ensureSemantics();
+    await tester.pumpWidget(wrap());
+    await tester.pumpAndSettle();
+
+    final titleNode = tester.getSemantics(find.text('Title'));
+    expect(titleNode.flagsCollection.isHeader, isTrue);
+    final categoryNode = tester.getSemantics(find.text('Category growth'));
+    expect(categoryNode.flagsCollection.isHeader, isTrue);
+
+    semanticsHandle.dispose();
+  });
 }

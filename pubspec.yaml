@@ -16,7 +16,15 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 1.0.0+1
+# Roadmap Item 19: RC versioning strategy — <base-version>-rc.<n>+<build>.
+# No prior versioning policy existed in this repo (first real release
+# candidate), so this establishes one: the base version (1.0.0) stays
+# fixed through the RC series, `-rc.N` increments per release
+# candidate, and the build number after `+` increments on every build
+# regardless of RC number (Android's versionCode must strictly
+# increase between uploads). Drop the `-rc.N` suffix entirely for the
+# actual 1.0.0 release once one is approved.
+version: 1.0.0-rc.1+2
 
 environment:
   sdk: ^3.12.2

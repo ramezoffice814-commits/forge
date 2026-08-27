@@ -84,6 +84,16 @@ void main() {
       expect(find.byType(ActiveMissionPage), findsOneWidget);
       expect(find.widgetWithText(ForgeButton, 'Start'), findsOneWidget);
 
+      // Roadmap Item 19 accessibility pass: the mission's Progress/
+      // History sections are exposed as semantic headers, so a
+      // screen-reader user can navigate this screen by section.
+      final semanticsHandle = tester.ensureSemantics();
+      final progressHeading = tester.getSemantics(find.text('Progress'));
+      expect(progressHeading.flagsCollection.isHeader, isTrue);
+      final historyHeading = tester.getSemantics(find.text('History'));
+      expect(historyHeading.flagsCollection.isHeader, isTrue);
+      semanticsHandle.dispose();
+
       await tester.tap(find.widgetWithText(ForgeButton, 'Start'));
       await tester.pumpAndSettle();
 

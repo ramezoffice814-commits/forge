@@ -83,6 +83,18 @@ void main() {
     expect(find.text('About'), findsOneWidget);
   });
 
+  testWidgets(
+    'the About section links to the Privacy and Terms of Service pages '
+    '(Roadmap Item 19) — actual navigation is covered by the router '
+    'tests, this just confirms the links render',
+    (tester) async {
+      await _pump(tester);
+
+      expect(find.text('Privacy'), findsOneWidget);
+      expect(find.text('Terms of Service'), findsOneWidget);
+    },
+  );
+
   testWidgets('AI privacy control moved into Settings still reads/writes '
       'the exact same aiPrivacyLevelProvider Profile used to host — no '
       'second privacy state, no behavior regression', (tester) async {

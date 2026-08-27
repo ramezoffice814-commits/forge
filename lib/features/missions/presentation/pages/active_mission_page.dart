@@ -122,33 +122,40 @@ class _ActiveMissionContent extends ConsumerWidget {
             ],
             ForgeCard(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      missionCategoryLabel(instance.category),
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelMedium?.copyWith(color: tokens.accent),
-                    ),
-                    if (syncState.status != MissionSyncStatus.idle)
-                      AuthorityStatusBadge(
-                        indicator: switch (syncState.status) {
-                          MissionSyncStatus.idle =>
-                            AuthorityIndicator.provisional,
-                          MissionSyncStatus.queued =>
-                            AuthorityIndicator.provisional,
-                          MissionSyncStatus.syncing =>
-                            AuthorityIndicator.pendingSync,
-                          MissionSyncStatus.confirmed =>
-                            AuthorityIndicator.confirmed,
-                          MissionSyncStatus.rejected =>
-                            AuthorityIndicator.conflict,
-                          MissionSyncStatus.conflict =>
-                            AuthorityIndicator.conflict,
-                        },
+                Semantics(
+                  header: true,
+                  label:
+                      '${missionCategoryLabel(instance.category)} mission: '
+                      '${instance.title}',
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      ExcludeSemantics(
+                        child: Text(
+                          missionCategoryLabel(instance.category),
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(color: tokens.accent),
+                        ),
                       ),
-                  ],
+                      if (syncState.status != MissionSyncStatus.idle)
+                        AuthorityStatusBadge(
+                          indicator: switch (syncState.status) {
+                            MissionSyncStatus.idle =>
+                              AuthorityIndicator.provisional,
+                            MissionSyncStatus.queued =>
+                              AuthorityIndicator.provisional,
+                            MissionSyncStatus.syncing =>
+                              AuthorityIndicator.pendingSync,
+                            MissionSyncStatus.confirmed =>
+                              AuthorityIndicator.confirmed,
+                            MissionSyncStatus.rejected =>
+                              AuthorityIndicator.conflict,
+                            MissionSyncStatus.conflict =>
+                              AuthorityIndicator.conflict,
+                          },
+                        ),
+                    ],
+                  ),
                 ),
                 Text(
                   instance.description,
@@ -165,7 +172,13 @@ class _ActiveMissionContent extends ConsumerWidget {
             SizedBox(height: tokens.spacing.space4),
             ForgeCard(
               children: [
-                Text('Progress', style: Theme.of(context).textTheme.titleSmall),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'Progress',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
                 SizedBox(height: tokens.spacing.space2),
                 MissionProgressControl(
                   progress: aggregate.progressState,
@@ -190,7 +203,13 @@ class _ActiveMissionContent extends ConsumerWidget {
             SizedBox(height: tokens.spacing.space4),
             ForgeCard(
               children: [
-                Text('History', style: Theme.of(context).textTheme.titleSmall),
+                Semantics(
+                  header: true,
+                  child: Text(
+                    'History',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
                 SizedBox(height: tokens.spacing.space2),
                 MissionTimeline(events: aggregate.events),
               ],
