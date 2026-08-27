@@ -1,0 +1,25 @@
+# Roadmap Item 19 — Android release signing template.
+#
+# This file is a template only — copy it to `android/key.properties`
+# (that exact filename, same directory) and fill in real values there.
+# `android/key.properties` is gitignored (both at the repo root and in
+# android/.gitignore) — it must NEVER be committed. This example file
+# has no real values in it and is safe to commit.
+#
+# See docs/RELEASE_READINESS.md's Android signing section for:
+#   - how to generate a real release keystore (`keytool -genkey ...`)
+#   - recommended keystore location (outside this repo entirely)
+#   - backup requirements (losing this key means losing the ability to
+#     publish updates to the same Play Store listing, permanently)
+#   - who should hold the passwords (never this repository, never a CI
+#     log, never a chat transcript)
+#
+# storeFile is resolved relative to the android/app/ directory unless
+# given as an absolute path — an absolute path outside this repo is
+# strongly recommended so the keystore file itself is never anywhere
+# near a location `git add .` could ever pick up by accident.
+
+storeFile=/absolute/path/to/your/forge-release.jks
+storePassword=REPLACE_ME
+keyAlias=forge-release
+keyPassword=REPLACE_ME
