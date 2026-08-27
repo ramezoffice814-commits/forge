@@ -422,14 +422,57 @@ credentials only a human can provide. See
 blocker list (P0–P3) and exact reasoning behind every fixed-vs-deferred
 decision.
 
+### 19 — Release Candidate & Real Platform Verification
+Turned the hardened `develop` build into a genuine release candidate —
+not a production deployment — by closing the real-environment, signing,
+legal-surface, and release-pipeline gaps Item 18 left open. Full
+area-by-area record in [docs/RC1_CHECKLIST.md](RC1_CHECKLIST.md).
+
+Real work landed: an RC versioning strategy (`1.0.0-rc.1+2`, no prior
+policy existed); safe Android signing plumbing (`android/key.properties`
+drives real signing if present, fails clearly if incomplete, falls back
+to the existing debug-signing dev/CI convenience if absent — no
+production keystore generated, per the item's own explicit
+instruction); real `/legal/privacy`/`/legal/terms` routes with honest,
+factual draft content and a prominent "pending legal review" banner
+(not fabricated legal text); targeted accessibility fixes to the two
+screens Item 18 flagged as having zero coverage
+(`ActiveMissionPage`/`ProgressionPage`); and three new CI jobs
+(`android-build`/`web-build`/`windows-build`) that build — never sign,
+never publish — each platform's release configuration on every PR, so
+a regression like Item 18's desugaring break fails a PR automatically
+instead of surfacing during a manual release pass.
+
+Those new CI jobs then did exactly that: all three passed independently
+on GitHub-hosted runners against the exact code in this item, including
+**Windows** — proving a local machine's disabled-Developer-Mode block
+was specific to that one machine, not this project's Windows build
+config, even though a real launched-and-interacted-with Windows run
+remains unverified.
+
+**Classification: PARTIALLY VERIFIED** — no P0 blocker, full regression
+green (Flutter 978 passed/2 skipped/0 failed, Golden 18/18, SQL 17/17,
+Deno 25/25), all 5 CI checks green including the 3 new release-build
+jobs. Not "COMPLETE": Android real-device/emulator verification, a real
+(not just built) Windows run, and every staging-dependent check
+(auth/mission/progression/competition/notifications/AI Coach) remain
+genuinely blocked by missing hardware/credentials in this environment —
+unchanged from Item 18, reported honestly rather than assumed resolved.
+Final legal-content approval and an Android AAB build remain open too.
+Not "BLOCKED" either — nothing here is stuck pending a decision within
+this item's own control.
+
 ## Next
 
-Item 19 has not yet been scoped. Candidates surfaced by Item 18's own
-audit: real Android release signing + a CI build step to catch
-regressions like this pass's desugaring break automatically; authored
-Terms of Service/Privacy Policy content; a real staging smoke test once
-credentials are available; a `notifications`/`LocalReminderStore`
-retention policy; a full accessibility pass.
+Item 20 has not yet been scoped. Candidates surfaced by Item 19's own
+checklist: real Android release signing once a keystore is provided
+(plus the Play Store submission prep that unlocks) and an Android AAB
+CI job; authored/approved Terms of Service and Privacy Policy content;
+a real staging smoke test once credentials are available; genuine
+Android real-device (or cloud device farm) and Windows launched-and-
+interacted-with verification; a `notifications`/`LocalReminderStore`
+retention policy; a full accessibility pass beyond the two screens
+Item 19 targeted.
 
 ## Further Out
 
