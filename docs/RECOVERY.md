@@ -25,11 +25,12 @@ deliberately does not assume it.
 
 ## What actually reconstructs a database
 
-**The migrations themselves.** `supabase/migrations/` (27 files as of
-this writing) is the full, ordered, deterministic schema history —
-verified this pass via `npx supabase db reset` against a clean local
-Postgres: every migration applies from zero without error, followed by
-`supabase/seed.sql`. This means:
+**The migrations themselves.** `supabase/migrations/` (28 files as of
+this writing — Roadmap Item 19 re-verified the count and the clean-reset
+result, no new migration added this pass) is the full, ordered,
+deterministic schema history — verified via `npx supabase db reset`
+against a clean local Postgres: every migration applies from zero
+without error, followed by `supabase/seed.sql`. This means:
 
 - A fresh Postgres instance can always be brought to the current
   *schema* via `supabase db reset` (or `supabase db push` against a
