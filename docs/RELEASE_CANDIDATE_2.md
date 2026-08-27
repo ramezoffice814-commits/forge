@@ -22,8 +22,8 @@ following the strategy Item 19 established).
 |---|---|---|
 | Android signing | BLOCKED (by design) | Unchanged from RC1 — no production keystore exists, none generated. See "Android signing" below. |
 | Android AAB CI coverage | PASS (added) | New `android-aab-build` CI job — see "CI changes." |
-| Android release build (APK) | PASS (via CI, pending re-verification) | Locally blocked by the same Application Control policy issue documented since Item 19; CI confirmed this exact build config previously. Needs re-confirmation on this branch's own commit once pushed. |
-| Android release build (AAB) | UNVERIFIED locally, PENDING CI | Never previously attempted (no job existed before this pass). |
+| Android release build (APK) | **PASS (via CI, confirmed on this branch)** | Locally blocked by the same Application Control policy issue documented since Item 19; PR #13's own CI run confirmed this exact commit builds in 9m7s. |
+| Android release build (AAB) | **PASS (via CI, confirmed on this branch)** | Never previously attempted (no job existed before this pass) — PR #13's new `android-aab-build` job passed in 10m2s against the commit including the `INTERNET` permission fix. |
 | Android real-device run | BLOCKED | Unchanged — `flutter devices`/`flutter emulators`/`adb` all confirm none available, re-checked this pass. |
 | **Android INTERNET permission** | **FIXED (real P1 found this pass)** | `main/AndroidManifest.xml` never declared `android.permission.INTERNET` — only the `debug`/`profile` overlay manifests did (Flutter's dev-connection boilerplate), which does not apply to `release`. No plugin's own manifest supplies it either (checked `flutter_local_notifications`, `flutter_secure_storage`, `flutter_tts` directly — none declare it; `google_fonts`/`timezone`/`supabase_flutter` are pure-Dart, no manifest at all). A real release build would have been unable to make any network call. See "Android permission audit" below. |
 | Android permission audit (full) | DONE | See "Android permission audit" below. |
@@ -123,8 +123,12 @@ machine-specific environment issue — `flutter analyze`/`flutter
 test`/`flutter doctor` all remain unaffected). Per this item's own
 instruction ("use CI when local Application Control/Developer Mode
 prevents legitimate local verification — do not bypass machine
-security controls"), authoritative build confirmation is deferred to
-this branch's own CI run once pushed — see
+security controls"), authoritative build confirmation came from this
+branch's own CI run instead: **PR #13's `android-build` (APK) and
+`android-aab-build` (AAB) jobs both passed** — 9m7s and 10m2s
+respectively — against the exact commit including the `INTERNET`
+permission fix, on a clean GitHub-hosted runner unaffected by this
+machine's local Application Control policy. See
 [docs/PRODUCTION_GO_NO_GO.md](PRODUCTION_GO_NO_GO.md) for how that
 result feeds the final gate.
 
