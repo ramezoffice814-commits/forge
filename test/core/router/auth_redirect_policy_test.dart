@@ -97,6 +97,35 @@ void main() {
     expect(harness.location, '/settings');
   });
 
+  testWidgets('legal/privacy pages (Roadmap Item 19) are reachable while '
+      'unauthenticated — a real Terms/Privacy page must be readable '
+      'before someone creates an account, not only after', (tester) async {
+    final harness = await pump(
+      tester,
+      overrides: unauthenticatedTestOverrides(onboardingCompleted: true),
+    );
+
+    harness.router.go('/legal/privacy');
+    await tester.pumpAndSettle();
+    expect(harness.location, '/legal/privacy');
+
+    harness.router.go('/legal/terms');
+    await tester.pumpAndSettle();
+    expect(harness.location, '/legal/terms');
+  });
+
+  testWidgets('legal/privacy pages remain reachable while authenticated too — '
+      'not treated as a protected route, no redirect either direction', (
+    tester,
+  ) async {
+    final harness = await pump(tester, overrides: authenticatedTestOverrides());
+
+    harness.router.go('/legal/privacy');
+    await tester.pumpAndSettle();
+
+    expect(harness.location, '/legal/privacy');
+  });
+
   testWidgets('authenticated user visiting sign-in is bounced to home', (
     tester,
   ) async {

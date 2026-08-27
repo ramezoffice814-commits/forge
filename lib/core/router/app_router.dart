@@ -9,6 +9,8 @@ import '../../features/auth/presentation/sign_up_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
 import '../../features/dashboard/presentation/dashboard_page.dart';
 import '../../features/leaderboard/presentation/leaderboard_page.dart';
+import '../../features/legal/presentation/pages/privacy_policy_page.dart';
+import '../../features/legal/presentation/pages/terms_of_service_page.dart';
 import '../../features/missions/presentation/pages/active_mission_page.dart';
 import '../../features/notifications/presentation/pages/notification_inbox_page.dart';
 import '../../features/onboarding/presentation/onboarding_page.dart';
@@ -110,6 +112,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutePaths.settings,
         name: AppRouteNames.settings,
         builder: (context, state) => const SettingsPage(),
+      ),
+      // Deliberately reachable regardless of auth state (not part of
+      // the shell, not full-screen-over-it either — a plain top-level
+      // route) — see `AppRoutePaths.privacyPolicy`'s own doc comment.
+      GoRoute(
+        path: AppRoutePaths.privacyPolicy,
+        name: AppRouteNames.privacyPolicy,
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: AppRoutePaths.termsOfService,
+        name: AppRouteNames.termsOfService,
+        builder: (context, state) => const TermsOfServicePage(),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

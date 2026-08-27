@@ -44,6 +44,14 @@ abstract final class AppRoutePaths {
   // Same reasoning again — see `SettingsPage`.
   static const settings = '/settings';
 
+  // Deliberately NOT in `protected` below — a real Terms/Privacy page
+  // must be readable before someone creates an account, not only
+  // after. See `AuthStateAwareRedirectPolicy`'s own final `return
+  // null` branch: any route not listed as protected/public-auth is
+  // left alone regardless of auth state (Roadmap Item 19).
+  static const privacyPolicy = '/legal/privacy';
+  static const termsOfService = '/legal/terms';
+
   static const protected = [
     home,
     rank,
@@ -78,4 +86,6 @@ abstract final class AppRouteNames {
   static const publicProfile = 'public-profile';
   static const notifications = 'notifications';
   static const settings = 'settings';
+  static const privacyPolicy = 'privacy-policy';
+  static const termsOfService = 'terms-of-service';
 }
