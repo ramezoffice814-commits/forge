@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Roadmap Item 21 — same fixed CAN navy + static mark as
+     drawable/launch_background.xml (this v21 variant takes precedence
+     on API 21+, which is effectively every device this app targets —
+     see android/app/build.gradle.kts's minSdk). Was
+     ?android:colorBackground, the OS's dynamic light/dark system
+     default; CAN is dark-theme-only, so a fixed color avoids a
+     mismatched flash under the system's light setting. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="?android:colorBackground" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/launch_background_color" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@mipmap/ic_launcher_foreground" />
+    </item>
 </layer-list>

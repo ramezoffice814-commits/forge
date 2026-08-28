@@ -38,7 +38,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Fresh install: no session, onboarding not completed.
-    expect(find.text('FORGE YOURSELF'), findsOneWidget);
+    expect(find.text('PROVE YOU CAN'), findsOneWidget);
 
     for (var i = 0; i < 3; i++) {
       await tester.tap(find.text('Next'));
@@ -47,7 +47,7 @@ void main() {
     await tester.tap(find.widgetWithText(ForgeButton, 'Create Account'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Forge yourself'), findsOneWidget); // sign-up header
+    expect(find.text('Prove you can.'), findsOneWidget); // sign-up header
 
     await tester.enterText(
       find.widgetWithText(TextFormField, 'Display name'),

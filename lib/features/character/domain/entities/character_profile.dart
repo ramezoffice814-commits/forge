@@ -53,7 +53,7 @@ class CharacterProfile {
   static const watcher = CharacterProfile(
     id: CharacterId.watcher,
     displayName: 'The Watcher',
-    title: 'Keeper of the Forge',
+    title: 'Keeper of the Current',
     shortDescription:
         'A quiet presence who delivers your daily trial and says little '
         'else.',

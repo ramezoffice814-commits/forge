@@ -13,6 +13,9 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <!-- Roadmap Item 21: same fixed CAN navy as the light-mode
+             styles.xml — CAN is dark-theme-only regardless of the OS
+             setting, so both variants converge on the same color. -->
+        <item name="android:windowBackground">@color/launch_background_color</item>
     </style>
 </resources>

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../widgets/legal_page_scaffold.dart';
 
 /// Draft privacy disclosure (Roadmap Item 19 section 17) — describes
-/// Forge's actual current technical data handling as accurately as this
+/// CAN's actual current technical data handling as accurately as this
 /// codebase's own audit trail supports (see docs/RELEASE_READINESS.md),
 /// deliberately NOT a finished, legally-binding policy: no claims about
 /// jurisdiction, user rights under a specific law (GDPR/CCPA/etc.),
@@ -18,7 +18,7 @@ class PrivacyPolicyPage extends StatelessWidget {
 
   static const _sections = [
     LegalSection(
-      heading: 'What Forge stores about you',
+      heading: 'What CAN stores about you',
       body:
           'An account (email and a display name you choose), your mission '
           'completions and the resulting XP/level/achievement history, '
@@ -30,7 +30,7 @@ class PrivacyPolicyPage extends StatelessWidget {
     LegalSection(
       heading: 'AI Coach',
       body:
-          'Forge currently uses only a deterministic mock AI provider — '
+          'CAN currently uses only a deterministic mock AI provider — '
           'no message you send is transmitted to OpenAI, Google, '
           'Anthropic, or any other real AI company. If a real provider '
           'is ever connected, this page will be updated before that '
@@ -49,7 +49,7 @@ class PrivacyPolicyPage extends StatelessWidget {
     LegalSection(
       heading: 'Notifications',
       body:
-          'On Android and Windows, Forge can show device notifications '
+          'On Android and Windows, CAN can show device notifications '
           'for your own reminders (daily mission, daily transmission, '
           'mission follow-up) — nothing is sent through a third-party '
           'push service; these are scheduled and shown entirely on your '
@@ -62,7 +62,7 @@ class PrivacyPolicyPage extends StatelessWidget {
           'Account deletion is not implemented yet — requesting it in '
           'Settings currently returns an honest "not available yet" '
           'message rather than pretending to delete anything. This will '
-          'be built out as its own reviewed feature before Forge is '
+          'be built out as its own reviewed feature before CAN is '
           'submitted to any app store.',
     ),
     LegalSection(
@@ -71,7 +71,7 @@ class PrivacyPolicyPage extends StatelessWidget {
           'No analytics, advertising, or tracking SDK is integrated in '
           'this app today. The only third-party service in the request '
           'path is Supabase, which hosts the database and authentication '
-          'backend on Forge\'s behalf.',
+          'backend on CAN\'s behalf.',
     ),
   ];
 

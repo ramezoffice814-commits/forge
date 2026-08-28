@@ -62,7 +62,7 @@ class LegalPageScaffold extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Draft — pending legal review. This page describes '
-                        "Forge's actual current technical behavior as "
+                        "CAN's actual current technical behavior as "
                         'accurately as possible, but it has not been '
                         'reviewed or approved by legal counsel and is not '
                         'yet a final, binding policy.',

@@ -19,7 +19,7 @@ class SplashPage extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('FORGE', style: Theme.of(context).textTheme.titleSmall),
+            Text('CAN', style: Theme.of(context).textTheme.titleSmall),
             SizedBox(height: tokens.spacing.space4),
             const ForgeLoadingState(),
           ],

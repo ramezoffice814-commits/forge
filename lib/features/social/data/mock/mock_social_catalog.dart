@@ -22,7 +22,7 @@ abstract final class MockSocialCatalog {
     (
       name: 'Bram',
       level: 27,
-      title: 'Forge Veteran',
+      title: 'Proven Veteran',
       achievements: 31,
       league: 'Mythic',
     ),

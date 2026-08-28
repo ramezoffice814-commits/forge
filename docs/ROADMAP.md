@@ -520,15 +520,90 @@ this item's own control; every gap needs a credential, a device, a real
 keystore, a store account, or a human legal/business decision this
 item correctly declined to invent.
 
+### 21 — CAN Rebrand & Cinematic App Experience
+Forge's user-facing brand is now **CAN** ("I can" — capability,
+discipline, progress, self-belief, action). Full record in
+[docs/CAN_REBRAND_AUDIT.md](CAN_REBRAND_AUDIT.md). Not a production
+deployment, a Play Store submission, or a package-ID migration.
+
+Every occurrence of "Forge"/"FORGE"/"forge" across `lib/`, `android/`,
+`web/`, `windows/`, `pubspec.yaml`, and `test/` was inventoried and
+classified before touching anything — user-facing brand text changed
+to CAN (app title, the shared auth-screen kicker, sign-up/onboarding
+headings, Settings/About, legal-page copy, the Android notification
+app name, level/achievement/title-catalog strings); internal code
+symbols (`ForgeTokens`, `ForgeTheme`, etc.), the frozen package/
+application identity (`com.forge.app.forge`, unchanged per this item's
+own explicit instruction), every persisted secure-storage key prefix,
+the Android notification channel ID, and historical roadmap entries
+were all deliberately left alone — each with its own documented reason
+in the audit, not a blind global replace. The Character/Daily
+Transmission system's in-universe "the Forge" lore noun was replaced
+with "the Current" (a creative call, flagged explicitly, not slipped in
+silently) to keep the narrative internally consistent now that the
+product itself isn't named Forge.
+
+A cinematic CAN opening sequence was built as a presentation-only
+overlay (`lib/core/opening/`) wrapping `MaterialApp.router`'s routed
+content — it never touches routing or auth state; `AuthStateAwareRedirectPolicy`
+resolves the real destination exactly as it always has, immediately,
+and the overlay simply covers the screen for a short fixed sequence
+(~2.5s first-run / ~1.1s returning-user fast path / ~0.6s reduced-
+motion, selected via the same `onboardingStatusProvider` the router
+already watches) before dissolving to reveal it. A hard 4-second safety
+cap and defensive error handling guarantee the app can never get stuck
+behind it. Verified with 6 dedicated deterministic timing tests (not
+goldens, per this item's own "temporal behavior" instruction) plus
+empirical confirmation that all 9 existing full-`ForgeApp` integration
+test files continue to pass unmodified with the overlay wired in
+system-wide. 7 existing golden baselines were regenerated to reflect
+the intentional rebrand text changes, each diff reviewed as small and
+localized before accepting.
+
+The CAN icon was initially **AWAITING APPROVED CAN ICON FILE** — a
+concept was shared in chat but no actual file could be found in the
+project/session at that point; no icon was fabricated as a substitute.
+A follow-up patch later found the approved source placed directly in
+the project, preserved it as a canonical tracked copy
+(`assets/branding/can_icon_source.png`), and integrated real derivatives
+across Android (legacy launcher + a proper adaptive icon foreground/
+background pair, safe-zone-checked), Web (including maskable variants),
+and Windows (a genuine multi-resolution `.ico`) — see
+[docs/CAN_REBRAND_AUDIT.md](CAN_REBRAND_AUDIT.md) for the full record.
+That same patch also fixed the Android native launch screen (previously
+still the stock Flutter white default; now the same CAN navy plus a
+static mark, eliminating the pre-Flutter white flash) and added a
+restrained Dashboard entrance animation. One restrained haptic
+touchpoint was added (level-up); broader mission-completion haptics
+were deliberately deferred rather than threaded hastily through all ten
+progress-control types. Version bumped `1.0.0-rc.2+3` →
+`1.0.0-rc.3+4`, following the same RC pattern Items 19-20 established.
+
+**Classification: PARTIALLY VERIFIED.** No P0 blocker, no security or
+backend-compatibility change (no migration, no RPC/Edge Function
+rename), full regression green, CAN icon now fully integrated across
+all three platforms. Not "COMPLETE": real Android real-device and
+Windows launched-and-interacted-with verification remain unavailable in
+this environment, unchanged since Items 17-20 — the icon-source
+blocker is closed, but real-platform interaction still is not. Not
+"BLOCKED" either — nothing here is stuck pending a decision within this
+item's own control.
+
 ## Next
 
-Item 21 has not yet been scoped. Candidates surfaced by Item 20's own
-gate document: closing each NO-GO condition in
+Item 22 has not yet been scoped. Candidate direction (not committed):
+**Free Public Beta Launch** — a signed Android APK distributed via
+GitHub Releases/direct download, a free-hosted Web/PWA build, a
+Supabase free-tier backend, a feedback channel, and a beta release
+page, with zero Google Play requirement and zero mandatory paid
+infrastructure. This is candidate scope only until formally approved —
+not started. Also still open from Item 20's own gate document: closing
+each NO-GO condition in
 [docs/PRODUCTION_GO_NO_GO.md](PRODUCTION_GO_NO_GO.md) once the
 corresponding human/business input exists (a real signing key, approved
-legal content, real brand assets and screenshots, a hosted Privacy
-Policy, a Play Store developer account); implementing real account
-deletion per the design in
+legal content, real store screenshots — the CAN icon itself is now
+integrated, see Item 21 above — a hosted Privacy Policy, a Play Store
+developer account); implementing real account deletion per the design in
 [docs/ACCOUNT_DELETION_DESIGN.md](ACCOUNT_DELETION_DESIGN.md) once the
 anonymize-vs-cascade decision is made; a chosen retention policy per
 [docs/DATA_RETENTION_DECISIONS.md](DATA_RETENTION_DECISIONS.md); a real

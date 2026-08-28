@@ -27,7 +27,7 @@ class _OnboardingPageData {
 const _pages = [
   _OnboardingPageData(
     icon: Icons.bolt_rounded,
-    kicker: 'FORGE YOURSELF',
+    kicker: 'PROVE YOU CAN',
     title: 'Daily discipline, compounding.',
     body:
         'One focused challenge a day — fitness and craft — building toward '

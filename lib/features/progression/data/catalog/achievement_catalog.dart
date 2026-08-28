@@ -124,7 +124,7 @@ abstract final class AchievementCatalog {
     ),
     const AchievementDefinition(
       id: 'mastery_50_total',
-      name: 'Forged in Repetition',
+      name: 'Proven Through Repetition',
       description: 'Complete 50 missions total.',
       category: AchievementCategory.mastery,
       criteria: TotalCompletionsCriteria(50),

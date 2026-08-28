@@ -21,20 +21,20 @@ current fact (same treatment as the Android target-API question in
 
 | Asset | Current state | Location |
 |---|---|---|
-| Android launcher icon | Stock Flutter template default, all densities | `android/app/src/main/res/mipmap-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher.png` |
-| Android adaptive icon | Not configured — no adaptive-icon XML found | n/a |
-| Android splash/launch background | Stock Flutter default (plain white background); customization instructions exist in the file only as comments, unused | `android/app/src/main/res/drawable/launch_background.xml` |
-| Web favicon/PWA icons | Not independently re-audited this pass — carried over from Item 18/19's finding that `manifest.json`'s `theme_color`/`background_color` are still the default Flutter blue (`#0175C2`) | `web/manifest.json`, `web/icons/` |
-| Windows app icon | **Already Forge-specific** — the one asset that is not a template default | `windows/runner/resources/app_icon.ico` |
+| Android launcher icon | **CAN-branded** (updated in Roadmap Item 21) — real legacy icon at all densities plus a proper adaptive icon (foreground/background pair, safe-zone-checked) | `android/app/src/main/res/mipmap-{hdpi,mdpi,xhdpi,xxhdpi,xxxhdpi}/ic_launcher{,_foreground}.png`, `mipmap-anydpi-v26/ic_launcher.xml` |
+| Android adaptive icon | **Configured** (Item 21) — `ic_launcher_foreground.png` at 5 densities + a solid `#161826` background color, wired via `mipmap-anydpi-v26/ic_launcher.xml` | see above |
+| Android splash/launch background | **CAN-branded** (Item 21) — fixed navy (`#161826`) plus a static centered CAN mark, replacing the stock white default | `android/app/src/main/res/drawable{,-v21}/launch_background.xml` |
+| Web favicon/PWA icons | **CAN-branded** (Item 21) — `manifest.json`'s `theme_color`/`background_color` now `#161826` (was the default Flutter blue `#0175C2`); all icon/favicon files regenerated from the approved CAN source | `web/manifest.json`, `web/icons/`, `web/favicon.png` |
+| Windows app icon | **CAN-branded** (Item 21) — regenerated as a genuine multi-resolution `.ico` from the approved CAN source (previously a Forge-specific but pre-CAN-rebrand icon) | `windows/runner/resources/app_icon.ico` |
 | Play Store feature graphic | Does not exist | n/a |
 | Play Store screenshots | Do not exist | n/a |
-| Play Store hi-res icon (512×512) | Does not exist as a separate store-upload asset (the launcher icon itself is still the stock default anyway) | n/a |
+| Play Store hi-res icon (512×512) | Does not exist yet as a *separate store-upload file* — the underlying app icon is now real CAN branding (see above), so this is a trivial export from the same canonical source (`assets/branding/can_icon_source.png`) whenever actual submission prep happens, not a real branding blocker anymore | n/a |
 
 ## What Play Store submission requires (spec, not yet produced)
 
 | Asset | Typical requirement | Status |
 |---|---|---|
-| App icon (hi-res, store listing) | 512×512 PNG, 32-bit with alpha | Missing — and the underlying launcher icon it would be based on is still the stock default, so this blocks on real branding first. |
+| App icon (hi-res, store listing) | 512×512 PNG, 32-bit with alpha | Not yet exported as a dedicated file, but no longer blocked on real branding (Item 21) — a straightforward resize of `assets/branding/can_icon_source.png` whenever actual submission prep happens. |
 | Feature graphic | 1024×500 PNG or JPG, no alpha | Missing. |
 | Phone screenshots | Typically 2–8 images, JPEG or 24-bit PNG, each dimension between roughly 320px and 3840px, with a max aspect ratio around 2:1 | Missing — see the screenshot plan in [docs/PLAY_STORE_PREP.md](PLAY_STORE_PREP.md). |
 | 7" / 10" tablet screenshots | Optional but recommended if the app supports tablet layouts | Not evaluated — Forge's existing golden-test coverage already includes "wide/tablet reference size" variants for several screens (dashboard, progression, competition), so tablet layouts do render; no tablet screenshots have been captured. |
@@ -44,13 +44,14 @@ current fact (same treatment as the Android target-API question in
 
 ## What blocks producing the missing assets
 
-- **App icon / adaptive icon / splash / feature graphic**: all need
-  real brand art (a logo, a color identity) that doesn't currently
-  exist anywhere in this repository — inventing one is a design
-  decision, not an engineering one, and explicitly out of this item's
-  scope ("do not invent final legal terms" extends in spirit to "do not
-  invent final brand assets" — neither is this codebase's call to make
-  unilaterally).
+- **App icon / adaptive icon / splash**: **resolved** (Roadmap Item 21)
+  — the approved CAN icon source was provided and integrated across
+  Android/Web/Windows, see the audit in
+  [docs/CAN_REBRAND_AUDIT.md](CAN_REBRAND_AUDIT.md).
+- **Feature graphic**: still needs real brand art beyond the app icon
+  itself (a 1024×500 promotional graphic is a distinct design asset,
+  not a derivative of the icon) — inventing one is a design decision,
+  not an engineering one, and out of scope here.
 - **Screenshots**: blocked on the same real-device/real-run
   verification gaps already tracked in
   [docs/RELEASE_CANDIDATE_2.md](RELEASE_CANDIDATE_2.md) (no Android

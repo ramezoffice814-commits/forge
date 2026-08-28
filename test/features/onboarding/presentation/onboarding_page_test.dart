@@ -55,7 +55,7 @@ void main() {
     await tester.pumpWidget(wrap());
     await tester.pumpAndSettle();
 
-    expect(find.text('FORGE YOURSELF'), findsOneWidget);
+    expect(find.text('PROVE YOU CAN'), findsOneWidget);
     expect(find.text('Daily discipline, compounding.'), findsOneWidget);
     expect(find.text('Back'), findsNothing);
   });
@@ -73,7 +73,7 @@ void main() {
 
     await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
-    expect(find.text('FORGE YOURSELF'), findsOneWidget);
+    expect(find.text('PROVE YOU CAN'), findsOneWidget);
   });
 
   testWidgets('Skip marks onboarding complete and goes to sign-in', (

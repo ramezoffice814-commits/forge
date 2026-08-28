@@ -15,22 +15,23 @@ overall gate this feeds into.
 | Developer account | AWAITING HUMAN ACTION | Requires a real Google Play Console developer account and its one-time registration fee — not something this codebase can create. |
 | App signing | BLOCKED (by design) | No production keystore exists; see [docs/RELEASE_CANDIDATE_2.md](RELEASE_CANDIDATE_2.md) "Android signing" and "Production key human gate." |
 | Release artifact (AAB) | See [docs/RELEASE_CANDIDATE_2.md](RELEASE_CANDIDATE_2.md) "Android release build results" | Play Store requires an `.aab`, not an `.apk`. |
-| Store listing — app name | DRAFT | "Forge" (already the app's actual name throughout the codebase — `pubspec.yaml`, Android label, Web title). |
+| Store listing — app name | DRAFT | "CAN" (the app's user-facing brand as of Roadmap Item 21 — Android label, Web title/manifest, Windows product name; `pubspec.yaml`'s own package name stays `forge` internally, see [docs/CAN_REBRAND_AUDIT.md](CAN_REBRAND_AUDIT.md)). |
 | Store listing — short description | DRAFT — REQUIRES HUMAN APPROVAL | See "Draft store copy" below. |
 | Store listing — full description | DRAFT — REQUIRES HUMAN APPROVAL | See "Draft store copy" below. |
-| App icon / feature graphic / screenshots | MISSING | See [docs/STORE_ASSET_REQUIREMENTS.md](STORE_ASSET_REQUIREMENTS.md). |
+| App icon | **INTEGRATED** (Item 21) | Real CAN branding across Android/Web/Windows — see [docs/CAN_REBRAND_AUDIT.md](CAN_REBRAND_AUDIT.md). The dedicated 512×512 Play Store hi-res upload file still needs a one-time export at actual submission time. |
+| Feature graphic / screenshots | MISSING | See [docs/STORE_ASSET_REQUIREMENTS.md](STORE_ASSET_REQUIREMENTS.md). |
 | App category | AWAITING HUMAN ACTION | A business/marketing decision (most likely "Productivity" or "Health & Fitness" given the discipline/habit-tracking subject matter) — not decided here. |
 | Content rating questionnaire | AWAITING HUMAN ACTION | Must be completed inside Play Console directly by whoever holds the developer account; this document cannot answer Google's questionnaire on the account owner's behalf. Based on the app's actual content (no user-generated text beyond a display name, no violence/mature content, competitive leaderboards against other users), a low/no-mature-content rating is plausible, but the actual questionnaire answers are a compliance step this document does not perform. |
-| Target audience / Families policy | AWAITING HUMAN ACTION | Requires a business decision on target age range; Forge has no age-gating today (see [docs/RC1_CHECKLIST.md](RC1_CHECKLIST.md) "Human legal-review blockers" — "a decision on age/eligibility requirements, if any"). |
+| Target audience / Families policy | AWAITING HUMAN ACTION | Requires a business decision on target age range; CAN has no age-gating today (see [docs/RC1_CHECKLIST.md](RC1_CHECKLIST.md) "Human legal-review blockers" — "a decision on age/eligibility requirements, if any"). |
 | Privacy Policy URL | BLOCKED | Needs a live, hosted URL — see [docs/STORE_ASSET_REQUIREMENTS.md](STORE_ASSET_REQUIREMENTS.md). |
 | Data Safety form | ENGINEERING INVENTORY PROVIDED, FORM NOT FILED | See "Data Safety engineering inventory" below — this is the factual input a human still has to transcribe into Play Console's actual form, not the form itself. |
 | Ads declaration | READY TO ANSWER: No ads | Confirmed — no ad SDK, ad network, or ad-serving code exists anywhere in `lib/` or `pubspec.yaml`'s dependencies. |
 | In-app purchases declaration | READY TO ANSWER: None today | Confirmed — no billing/purchase/IAP package or code exists anywhere in the codebase. |
-| Government app / COVID-19 app declarations | READY TO ANSWER: No | Not applicable to Forge's actual subject matter. |
+| Government app / COVID-19 app declarations | READY TO ANSWER: No | Not applicable to CAN's actual subject matter. |
 | Target API level compliance | See [docs/RELEASE_CANDIDATE_2.md](RELEASE_CANDIDATE_2.md) "Android target/API audit" | Flagged for explicit current-policy verification, not asserted. |
-| Pricing & distribution (countries, free/paid) | AWAITING HUMAN ACTION | Business decision, not made here. Forge has no payment/monetization code today, so "free" is the only option the current build actually supports. |
+| Pricing & distribution (countries, free/paid) | AWAITING HUMAN ACTION | Business decision, not made here. CAN has no payment/monetization code today, so "free" is the only option the current build actually supports. |
 | Testing track (internal/closed/open) | AWAITING HUMAN ACTION | A Play Console workflow decision made at actual submission time. |
-| Account deletion requirement | BLOCKED | Play policy requires an in-app deletion path (or documented process) for apps supporting account creation — Forge's is currently a placeholder. See [docs/ACCOUNT_DELETION_DESIGN.md](ACCOUNT_DELETION_DESIGN.md). |
+| Account deletion requirement | BLOCKED | Play policy requires an in-app deletion path (or documented process) for apps supporting account creation — CAN's is currently a placeholder. See [docs/ACCOUNT_DELETION_DESIGN.md](ACCOUNT_DELETION_DESIGN.md). |
 
 ## Draft store copy
 
@@ -49,7 +50,7 @@ against the current limit in Play Console before use.)
 
 ### Full description (draft)
 
-> Forge is a daily-discipline app built around a structured
+> CAN is a daily-discipline app built around a structured
 > mission-and-progression system.
 >
 > **Daily missions.** Complete missions tailored to categories you
@@ -71,7 +72,7 @@ against the current limit in Play Console before use.)
 > achievement/competition updates — notification permission is only
 > ever requested when you choose to enable it, never automatically.
 >
-> Forge does not use ads and has no in-app purchases.
+> CAN does not use ads and has no in-app purchases.
 
 Notes for whoever finalizes this:
 

@@ -283,4 +283,86 @@ void main() {
 
     semantics.dispose();
   });
+
+  group('Dashboard entrance (Roadmap Item 21)', () {
+    testWidgets(
+      'normal motion: content fades in (not immediately fully opaque) then '
+      'settles to fully visible',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(scenario: DashboardMockScenario.normalActive),
+        );
+        // Let the loading state resolve to DashboardPopulated, one frame in.
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pump();
+
+        final entranceFinder = find.byKey(
+          const Key('dashboard-entrance-opacity'),
+        );
+        expect(entranceFinder, findsOneWidget);
+        final midOpacity = tester.widget<Opacity>(entranceFinder).opacity;
+        expect(
+          midOpacity,
+          lessThan(1.0),
+          reason: 'expected an in-flight entrance fade below full opacity',
+        );
+
+        await tester.pumpAndSettle();
+
+        // Once settled, the entrance either shows opacity 1.0 or has
+        // removed itself entirely (both mean "fully visible").
+        final settledFinder = find.byKey(
+          const Key('dashboard-entrance-opacity'),
+        );
+        if (settledFinder.evaluate().isNotEmpty) {
+          expect(tester.widget<Opacity>(settledFinder).opacity, 1.0);
+        }
+        expect(find.text('Test User'), findsOneWidget);
+      },
+    );
+
+    testWidgets(
+      'reduced motion: content is immediately fully visible, no fade-in '
+      'window',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(
+            scenario: DashboardMockScenario.normalActive,
+            reduceMotion: true,
+          ),
+        );
+        await tester.pump(const Duration(milliseconds: 400));
+        await tester.pump();
+
+        expect(find.text('Test User'), findsOneWidget);
+        // Reduced motion returns widget.child directly (no Opacity
+        // wrapper at all) — the entrance key must never appear.
+        expect(
+          find.byKey(const Key('dashboard-entrance-opacity')),
+          findsNothing,
+          reason: 'reduced motion must skip the fade entirely',
+        );
+      },
+    );
+
+    testWidgets(
+      'does not replay on a data-only refresh of the same populated state',
+      (tester) async {
+        await tester.pumpWidget(
+          wrap(scenario: DashboardMockScenario.normalActive),
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Test User'), findsOneWidget);
+
+        // A rebuild with the same DashboardPopulated case (no loading/error
+        // state in between) must not reintroduce a mid-fade frame — the
+        // entrance wrapper's State is preserved, not recreated.
+        await tester.pump();
+        final finder = find.byKey(const Key('dashboard-entrance-opacity'));
+        if (finder.evaluate().isNotEmpty) {
+          expect(tester.widget<Opacity>(finder).opacity, 1.0);
+        }
+      },
+    );
+  });
 }

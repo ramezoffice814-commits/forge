@@ -1,11 +1,11 @@
 {
-    "name": "forge",
-    "short_name": "forge",
+    "name": "CAN",
+    "short_name": "CAN",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "Forge — daily discipline challenge app",
+    "background_color": "#161826",
+    "theme_color": "#161826",
+    "description": "CAN — daily discipline challenge app",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

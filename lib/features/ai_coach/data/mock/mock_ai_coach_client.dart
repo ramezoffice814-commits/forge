@@ -76,7 +76,7 @@ class MockAiCoachClient implements AiCoachClient {
   }
 
   String _dailyTransmission(AiCoachContext context, String tonePrefix) {
-    return '${tonePrefix}The forge is warm again today, ${context.displayName}.';
+    return '${tonePrefix}The current runs strong again today, ${context.displayName}.';
   }
 
   String _postMission(AiCoachContext context, String tonePrefix) {
