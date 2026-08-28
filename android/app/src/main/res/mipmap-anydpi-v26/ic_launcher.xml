@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Roadmap Item 21 — Android adaptive icon (API 26+). The foreground
+     PNG at each mipmap density carries the CAN mark scaled to ~58% of
+     the 108dp virtual canvas, comfortably inside the OS-guaranteed 66dp
+     safe-zone circle under every mask shape (circle/rounded-square/
+     squircle). The background is a solid color matching the app's own
+     deep-navy background, not a separate image. Devices below API 26
+     fall back to the legacy square ic_launcher.png in each
+     density-specific mipmap folder — both are kept in sync. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background"/>
+    <foreground android:drawable="@mipmap/ic_launcher_foreground"/>
+</adaptive-icon>

@@ -13,6 +13,11 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">?android:colorBackground</item>
+        <!-- Roadmap Item 21: fixed CAN navy rather than the OS's dynamic
+             light-mode default, matching launch_background.xml exactly
+             so the brief window between the launch screen being removed
+             and Flutter's own first frame painting never flashes a
+             different color. -->
+        <item name="android:windowBackground">@color/launch_background_color</item>
     </style>
 </resources>

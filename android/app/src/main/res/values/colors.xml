@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Roadmap Item 21 — CAN adaptive-icon background. Matches
+         ForgeColors.background (#161826) so the icon's own deep-navy
+         canvas is what shows through outside the foreground safe zone,
+         under every OS mask shape, rather than a mismatched default. -->
+    <color name="ic_launcher_background">#161826</color>
+    <!-- Same value, used by the native launch screen (launch_background.xml)
+         and NormalTheme's windowBackground — CAN is dark-theme-only
+         (ForgeTheme.dark() is used unconditionally, see app.dart), so the
+         native pre-Flutter window uses this fixed navy rather than the
+         OS's light/dark system default, avoiding a white (or mismatched
+         black) flash before the cinematic overlay's own identical
+         background takes over. -->
+    <color name="launch_background_color">#161826</color>
+</resources>

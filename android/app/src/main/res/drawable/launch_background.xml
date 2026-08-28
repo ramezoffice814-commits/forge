@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Modify this file to customize your launch splash screen -->
+<!-- Roadmap Item 21 — the native pre-Flutter launch screen. Was the
+     stock Flutter white default; now the same deep-navy background and
+     a static CAN mark, so there's no white flash and no jump before the
+     Flutter engine's own cinematic opening (CanOpeningOverlay) takes
+     over with the same background color. Deliberately static — no
+     native animation, per this item's own "do not duplicate the
+     cinematic sequence natively" instruction. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:drawable="@android:color/white" />
-
-    <!-- You can insert your own image assets here -->
-    <!-- <item>
+    <item android:drawable="@color/launch_background_color" />
+    <item>
         <bitmap
             android:gravity="center"
-            android:src="@mipmap/launch_image" />
-    </item> -->
+            android:src="@mipmap/ic_launcher_foreground" />
+    </item>
 </layer-list>
