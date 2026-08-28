@@ -118,32 +118,110 @@ every persisted storage key prefix above. Not attempted here.
 
 ## CAN icon — status
 
-**AWAITING APPROVED CAN ICON FILE.** An icon concept was shared in this
-session's chat as an inline image, but no actual file was found
-anywhere in the project or session temp/scratchpad directories this
-session could read or process — no icon asset was fabricated as a
-substitute, per this item's own explicit instruction. Once a real
-source file is provided (recommended: save it to
-`assets/branding/can_icon_source.png` in the repo), the remaining work
-is:
+**INTEGRATED.** The approved source was found placed directly in the
+project as `assets/Codex Image 28 Aug 2026, 15_03_26.png` (1254×1254,
+24bpp RGB, no alpha, ~1.79MB) — visually confirmed to match the
+approved CAN concept (wordmark, deep-navy/indigo rounded-square canvas,
+violet/lavender palette, orbital arcs, upward-right energy arrow) before
+any use. The original file was left untouched on disk, per this item's
+own instruction; the canonical, tracked project copy is
+`assets/branding/can_icon_source.png` (byte-identical, not staged
+alongside the original to avoid committing the same ~1.8MB image
+twice — `assets/Codex Image...png` itself is intentionally left
+untracked). No image-editing library was available in this environment
+(no ImageMagick, no working Python/PIL); every derivative below was
+generated via .NET's `System.Drawing` through PowerShell, verified by
+reading each result back before use.
 
-- **Android**: replace `android/app/src/main/res/mipmap-{hdpi,mdpi,
-  xhdpi,xxhdpi,xxxhdpi}/ic_launcher.png` at each density, and add a
-  proper adaptive-icon foreground/background pair
-  (`res/drawable/ic_launcher_foreground.xml` or PNG + a matching
-  `res/mipmap-anydpi-v26/ic_launcher.xml`) if an adaptive treatment is
-  wanted — keep the CAN mark inside the adaptive safe zone (roughly the
-  center 66% of the canvas) so it isn't clipped by circular/squircle
-  masks.
-- **Web**: replace `web/icons/Icon-{192,512}.png` and
-  `Icon-maskable-{192,512}.png`, plus `web/favicon.png`.
-- **Windows**: replace `windows/runner/resources/app_icon.ico` (a
-  multi-resolution `.ico`, not a plain PNG).
+- **Android legacy launcher icon**: direct high-quality resize of the
+  source to 48/72/96/144/192px at mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi
+  (`res/mipmap-*/ic_launcher.png`) — no stretching, aspect ratio
+  preserved (the source is already 1:1).
+- **Android adaptive icon** (API 26+): a proper foreground/background
+  pair, not a reuse of the legacy square asset. `res/mipmap-*/
+  ic_launcher_foreground.png` at 108/162/216/324/432px (108dp-canvas
+  densities) — the source scaled to 58% and centered on a *transparent*
+  canvas, comfortably inside the OS-guaranteed 66dp safe-zone circle
+  (~61% of 108dp) under every mask shape (circle/rounded-square/
+  squircle) with margin to spare — visually confirmed by reading the
+  generated PNG back. The background is a solid color
+  (`@color/ic_launcher_background`, `#161826` — `ForgeColors.background`,
+  defined in the new `res/values/colors.xml`), not a second image.
+  `res/mipmap-anydpi-v26/ic_launcher.xml` wires both together. Devices
+  below API 26 fall back to the legacy square icon above.
+  `applicationId`/`namespace` (`com.forge.app.forge`) — **unchanged**.
+- **Web**: `web/icons/Icon-{192,512}.png` are direct resizes;
+  `Icon-maskable-{192,512}.png` use the same 72%-safe-zone-padding
+  technique as the Android adaptive foreground, but composited onto a
+  *solid* `#161826` background (maskable icons should fill the full
+  canvas, not go transparent, so an aggressive OS crop never exposes an
+  empty edge) — `web/favicon.png` resized to 64px. `manifest.json`'s
+  icon list still references the same filenames, now updated in place.
+- **Windows**: `windows/runner/resources/app_icon.ico` rebuilt as a
+  genuine multi-resolution icon (16/32/48/64/128/256px, each a real
+  resize, embedded as PNG-compressed frames per size — supported since
+  Windows Vista) — 163,391 bytes, round-tripped through `System.Drawing.
+  Icon` to confirm the file is well-formed before finalizing.
 
-No `flutter_launcher_icons`-style automation was wired in this pass —
-adding a new dev-dependency and generator config for an asset that
-doesn't exist yet would be untested, unused tooling; the manual steps
-above are the concrete, actionable path once the source file exists.
+No `flutter_launcher_icons`-style automation was added — every
+derivative was generated once, directly, and verified; adding a new
+dev-dependency for a one-time job already done would be unused tooling
+going forward, not a net improvement.
+
+### Native Android launch-screen continuity
+
+The prior report correctly flagged that `launch_background.xml` was
+still the stock Flutter white default — **fixed this pass**.
+`res/values/colors.xml` now also defines `launch_background_color`
+(`#161826`, same value as the adaptive-icon background). Both
+`res/drawable/launch_background.xml` and the API-21+ `res/drawable-v21/
+launch_background.xml` (which takes precedence on every device this app
+targets) now paint that fixed navy plus a centered, static CAN mark
+(`@mipmap/ic_launcher_foreground`) instead of `@android:color/white` /
+the OS's dynamic `?android:colorBackground`. Both `NormalTheme` variants
+(`values/styles.xml` light, `values-night/styles.xml` dark) now use the
+same fixed color for `android:windowBackground` too, so the brief window
+between the native launch screen being removed and Flutter's own first
+frame painting can't flash a different color either. CAN is
+dark-theme-only regardless of the OS's light/dark setting (`ForgeTheme.
+dark()` is used unconditionally — see `app.dart`), so both style
+variants deliberately converge on the identical navy rather than
+following the system default.
+
+Net effect: native launch (navy + static CAN mark) → `NormalTheme`
+window background (same navy, while the Flutter engine initializes) →
+`CanOpeningOverlay`'s own first frame (`tokens.background` = the same
+`#161826`, now with the *animated* ignition/orbit/arrow sequence) →
+routed content. No white flash, no stock Flutter branding, no
+background-color jump at any handoff point — verified structurally
+(`test/branding/can_icon_assets_test.dart`) rather than by native
+screenshot, since `flutter test` cannot observe actual OS splash
+rendering.
+
+### Dashboard entrance (added this pass)
+
+The prior report also correctly flagged that no dedicated Dashboard
+entrance existed. `DashboardPage`'s `_DashboardBody` now wraps
+`DashboardPopulated`'s real content in a new `_DashboardEntrance`
+widget: a one-shot fade (opacity 0→1) plus a ~12px upward translation,
+~360ms, `Curves.easeOutCubic` — within the requested 250-450ms / 8-16px
+ranges. It does **not** coordinate directly with `CanOpeningOverlay`
+(which stays deliberately router-and-destination agnostic — see its own
+doc comment) — instead it relies on ordinary Flutter `State` lifecycle:
+because `StatefulShellRoute.indexedStack` preserves each tab's widget
+subtree, `_DashboardEntrance`'s `State` is created once, the first time
+`DashboardPopulated` content actually renders (which in practice is
+immediately after the CAN overlay dissolves into the authenticated
+shell, or immediately after sign-in for a previously-unauthenticated
+session) — and is *not* recreated on a subsequent data-only refresh
+(e.g. completing a mission), only on a full loading/error round-trip,
+which is an acceptably low-cost, infrequent replay for a sub-half-second
+fade. Onboarding/auth/every other router-controlled destination keeps
+the CAN overlay's own plain dissolve — no Dashboard-specific motion was
+added anywhere else, and no Dashboard business logic changed.
+
+Reduced motion (`MediaQuery.disableAnimations`) skips the wrapper
+entirely — content renders immediately, no fade, no translation.
 
 ## Cinematic opening — architecture
 
@@ -277,6 +355,41 @@ mid-animation frame" golden would be fragile and low-value, covered
 far better by the dedicated timing tests above), and Settings has never
 had a golden test in this codebase; adding one is a bigger, separate
 scope decision than this pass's own text-consistency check warrants.
+
+### Final visual patch (icon integration + Dashboard entrance)
+
+`test/branding/can_icon_assets_test.dart` — 26 deterministic
+file-existence and content-reference checks (canonical source present;
+every Android legacy + adaptive-foreground density exists; the adaptive
+XML/color resources wire up correctly; `AndroidManifest.xml` declares
+`CAN`, not `forge`; both `launch_background.xml` variants and both
+`NormalTheme`s use the fixed navy, not the stock white/dynamic system
+default; every Web icon file exists and `manifest.json`/`index.html`
+reference real files with the right title/color; the Windows `.ico`
+exists and is a plausible multi-resolution size). Deliberately file/
+content checks, not pixel comparisons — native OS icon and splash-screen
+rendering isn't observable from `flutter test` at all, and asserting on
+it would be exactly the fragile screenshot test this item warns against.
+
+`test/features/dashboard/presentation/dashboard_page_test.dart` gained
+3 tests for `_DashboardEntrance`: normal motion shows an in-flight
+opacity below 1.0 then settles to fully visible; reduced motion never
+renders the fade wrapper at all (immediate, full opacity); a data-only
+refresh of the same populated state does not reintroduce a mid-fade
+frame. All three target the entrance's `Key('dashboard-entrance-
+opacity')` specifically rather than a blanket `find.byType(Opacity)` —
+Dashboard already has an unrelated, pre-existing "mission-frame reveal"
+animation that also uses `Opacity`, which a broad type-based search
+would have conflated with this one (caught during development: the
+first version of these tests used the broad search and failed non-
+deterministically against the wrong widget).
+
+Golden tests: unchanged, 0 regenerated. The Dashboard entrance wrapper
+renders as a no-op once settled (opacity 1.0, translate 0), confirmed
+by re-running `dashboard_golden_test.dart` before and after — pixel-
+identical. Icon/launch-screen changes are native-platform resources
+entirely outside Flutter's own widget tree and cannot affect a Flutter
+golden test.
 
 ## What this document does not do
 
