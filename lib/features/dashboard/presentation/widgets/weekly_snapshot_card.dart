@@ -81,6 +81,7 @@ class _DayIndicator extends StatelessWidget {
 
     return Semantics(
       label: '${day.label}: $statusLabel',
+      excludeSemantics: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

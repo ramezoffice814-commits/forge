@@ -48,6 +48,7 @@ class _QuickActionButton extends StatelessWidget {
     return Semantics(
       button: true,
       label: action.label,
+      excludeSemantics: true,
       child: InkWell(
         onTap: action.onTap,
         borderRadius: tokens.radius.mdRadius,

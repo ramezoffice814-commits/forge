@@ -24,7 +24,9 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # regardless of RC number (Android's versionCode must strictly
 # increase between uploads). Drop the `-rc.N` suffix entirely for the
 # actual 1.0.0 release once one is approved.
-version: 1.0.0-rc.1+2
+# Roadmap Item 20: rc.1 -> rc.2, build 2 -> 3 (release/store submission
+# prep round — see docs/RELEASE_CANDIDATE_2.md).
+version: 1.0.0-rc.2+3
 
 environment:
   sdk: ^3.12.2

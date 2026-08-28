@@ -117,6 +117,7 @@ class _Stat extends StatelessWidget {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     return Semantics(
       label: '$label: $value',
+      excludeSemantics: true,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [

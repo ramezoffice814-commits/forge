@@ -38,6 +38,7 @@ class MissionTransmissionFrame extends StatelessWidget {
       label: unavailable
           ? 'Transmission unavailable'
           : 'The Watcher, mission transmission preview',
+      excludeSemantics: true,
       child: AspectRatio(
         aspectRatio: 4 / 5,
         child: ClipRRect(

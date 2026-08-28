@@ -91,7 +91,10 @@ void main() {
     await tester.pumpAndSettle();
 
     final handle = tester.ensureSemantics();
-    expect(find.bySemanticsLabel(RegExp('Level .* League')), findsWidgets);
+    expect(
+      find.bySemanticsLabel(RegExp('level .* League', caseSensitive: false)),
+      findsWidgets,
+    );
     handle.dispose();
   });
 }

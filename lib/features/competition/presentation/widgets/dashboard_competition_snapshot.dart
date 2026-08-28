@@ -33,6 +33,7 @@ class DashboardCompetitionSnapshot extends ConsumerWidget {
 
     return Semantics(
       button: true,
+      excludeSemantics: true,
       label:
           '${current.league.name} League, rank ${preview.currentRank}, '
           '$zoneLabel, '

@@ -15,7 +15,7 @@ import '../../../../core/theme/forge_tokens.dart';
 class SettingsAboutSection extends StatelessWidget {
   const SettingsAboutSection({super.key});
 
-  static const _version = '1.0.0-rc.1+2';
+  static const _version = '1.0.0-rc.2+3';
 
   @override
   Widget build(BuildContext context) {

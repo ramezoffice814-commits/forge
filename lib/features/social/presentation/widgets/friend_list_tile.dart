@@ -34,35 +34,39 @@ class FriendListTile extends StatelessWidget {
           padding: EdgeInsets.symmetric(vertical: tokens.spacing.space2),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: tokens.neutralRamp.c800,
-                child: Text(
-                  profile.displayName.isNotEmpty
-                      ? profile.displayName[0].toUpperCase()
-                      : '?',
-                  style: Theme.of(context).textTheme.titleSmall,
+              ExcludeSemantics(
+                child: CircleAvatar(
+                  radius: 20,
+                  backgroundColor: tokens.neutralRamp.c800,
+                  child: Text(
+                    profile.displayName.isNotEmpty
+                        ? profile.displayName[0].toUpperCase()
+                        : '?',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
                 ),
               ),
               SizedBox(width: tokens.spacing.space3),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      profile.displayName,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    Text(
-                      'Level ${profile.level} · ${profile.league} League',
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: tokens.text.withValues(alpha: 0.7),
+                child: ExcludeSemantics(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        profile.displayName,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium,
                       ),
-                    ),
-                  ],
+                      Text(
+                        'Level ${profile.level} · ${profile.league} League',
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: tokens.text.withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               if (onRemove != null)

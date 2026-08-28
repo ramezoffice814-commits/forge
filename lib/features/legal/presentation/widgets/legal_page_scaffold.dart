@@ -44,6 +44,7 @@ class LegalPageScaffold extends StatelessWidget {
               label:
                   'This document is a draft, pending legal review — not '
                   'yet approved as an official policy',
+              excludeSemantics: true,
               child: Container(
                 padding: EdgeInsets.all(tokens.spacing.space3),
                 decoration: BoxDecoration(

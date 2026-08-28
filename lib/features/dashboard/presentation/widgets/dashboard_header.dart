@@ -29,6 +29,7 @@ class DashboardHeader extends ConsumerWidget {
         Semantics(
           label: '${overview.displayName}\'s avatar',
           image: true,
+          excludeSemantics: true,
           child: CircleAvatar(
             radius: 22,
             backgroundColor: tokens.accentRamp.c800,

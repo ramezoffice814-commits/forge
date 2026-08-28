@@ -1,4 +1,15 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Roadmap Item 20: normal, auto-granted (not runtime-prompted)
+         permission required for any network call (Supabase Auth/REST/
+         Realtime/Edge Functions) once APP_ENV=live is ever used.
+         `debug`/`profile` build variants already declare this via
+         their own overlay manifests (for the Flutter tool's hot-reload
+         connection), but that does NOT carry over to `release` — with
+         no declaration here, a release build had no path to networking
+         at all (a real device would refuse the socket at the OS level)
+         and no plugin's own manifest supplies it either. Invisible
+         until now because the app has only ever run in mock mode. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <!-- Roadmap Item 17: runtime-requested on Android 13+ only via
          PluginLocalNotificationService.requestPermission(), never
          auto-granted — declaring it here is required for the request
