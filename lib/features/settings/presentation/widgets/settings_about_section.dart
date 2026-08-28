@@ -12,10 +12,15 @@ import '../../../../core/theme/forge_tokens.dart';
 /// from a package (no `package_info_plus` dependency exists in this
 /// project) — keep it in sync with `pubspec.yaml`'s `version:` field by
 /// hand when that changes.
+///
+/// Roadmap Item 22: "CAN Beta" here is the one restrained beta
+/// indicator this item's own instruction calls for ("do not plaster
+/// 'beta' across every screen — Settings/About is sufficient") — no
+/// other screen carries a beta label.
 class SettingsAboutSection extends StatelessWidget {
   const SettingsAboutSection({super.key});
 
-  static const _version = '1.0.0-rc.3+4';
+  static const _version = '1.0.0-beta.1+5';
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +31,7 @@ class SettingsAboutSection extends StatelessWidget {
       children: [
         Text('About', style: Theme.of(context).textTheme.titleSmall),
         SizedBox(height: tokens.spacing.space1),
-        Text('CAN', style: Theme.of(context).textTheme.bodyMedium),
+        Text('CAN Beta', style: Theme.of(context).textTheme.bodyMedium),
         Text(
           'Version $_version',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
