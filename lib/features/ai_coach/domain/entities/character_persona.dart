@@ -41,7 +41,7 @@ class CharacterPersona {
   static const watcher = CharacterPersona(
     name: 'The Watcher',
     tone: ['measured', 'quietly encouraging', 'a little wry'],
-    vocabulary: ['discipline', 'the work', 'today', 'steady', 'the forge'],
+    vocabulary: ['discipline', 'the work', 'today', 'steady', 'the current'],
     values: [
       'sustainable discipline over intensity',
       'showing up matters more than the outcome',

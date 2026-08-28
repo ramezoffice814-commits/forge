@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'core/opening/can_opening_overlay.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/forge_theme.dart';
 import 'features/ai_coach/presentation/providers/ai_coach_providers.dart';
@@ -23,12 +24,18 @@ class ForgeApp extends ConsumerWidget {
     // frame, and initialize() never throws even when unsupported.
     ref.watch(osNotificationBootstrapProvider);
     return MaterialApp.router(
-      title: 'Forge',
+      title: 'CAN',
       debugShowCheckedModeBanner: false,
       theme: ForgeTheme.dark(),
       darkTheme: ForgeTheme.dark(),
       themeMode: ThemeMode.dark,
       routerConfig: router,
+      // Roadmap Item 21: the cinematic CAN opening lives here, not as a
+      // route — it wraps whatever GoRouter has already resolved rather
+      // than gating navigation on animation completion. See
+      // CanOpeningOverlay's own doc comment for the full reasoning.
+      builder: (context, child) =>
+          CanOpeningOverlay(child: child ?? const SizedBox.shrink()),
     );
   }
 }

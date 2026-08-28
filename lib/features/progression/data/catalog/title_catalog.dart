@@ -29,7 +29,7 @@ abstract final class TitleCatalog {
     UserTitleDefinition(
       id: 'the_explorer',
       name: 'The Explorer',
-      description: 'Willing to try almost anything the Forge offers.',
+      description: 'Willing to try almost anything CAN offers.',
       priority: 10,
       matches: (s) => s.categoriesTried.length >= 4,
     ),

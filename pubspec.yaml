@@ -1,5 +1,5 @@
 name: forge
-description: "Forge — daily discipline challenge app"
+description: "CAN — daily discipline challenge app"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -26,7 +26,10 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # actual 1.0.0 release once one is approved.
 # Roadmap Item 20: rc.1 -> rc.2, build 2 -> 3 (release/store submission
 # prep round — see docs/RELEASE_CANDIDATE_2.md).
-version: 1.0.0-rc.2+3
+# Roadmap Item 21: rc.2 -> rc.3, build 3 -> 4 (CAN rebrand + cinematic
+# opening round — see docs/CAN_REBRAND_AUDIT.md). Still not the final
+# 1.0.0 release; the -rc.N suffix stays until one is actually approved.
+version: 1.0.0-rc.3+4
 
 environment:
   sdk: ^3.12.2

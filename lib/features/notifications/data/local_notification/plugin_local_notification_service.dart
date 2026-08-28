@@ -61,7 +61,7 @@ class PluginLocalNotificationService implements LocalNotificationService {
         '@mipmap/ic_launcher',
       );
       const windowsSettings = WindowsInitializationSettings(
-        appName: 'Forge',
+        appName: 'CAN',
         appUserModelId: 'com.forge.app.forge',
         guid: _windowsGuid,
       );

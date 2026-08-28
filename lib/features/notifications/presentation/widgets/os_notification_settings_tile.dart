@@ -90,7 +90,7 @@ class _StatusBody extends ConsumerWidget {
         tokens: tokens,
         text:
             'Device notifications are turned off. Enable them in your '
-            "system settings to get reminders outside the app — Forge won't "
+            "system settings to get reminders outside the app — CAN won't "
             'ask again automatically.',
       ),
       LocalNotificationPermissionStatus.granted => Row(

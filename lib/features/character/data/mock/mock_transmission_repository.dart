@@ -32,7 +32,7 @@ class MockTransmissionRepository implements TransmissionRepository {
       case TransmissionMockScenario.offline:
         throw const TransmissionOfflineException();
       case TransmissionMockScenario.repositoryError:
-        throw const TransmissionException('Could not reach the Forge.');
+        throw const TransmissionException('Could not reach the Current.');
       case TransmissionMockScenario.normalActive:
         return MockTransmissionScripts.normalActive(
           dashboard.displayName,

@@ -10,14 +10,14 @@ abstract final class LevelCatalog {
   /// Level -> rank title, holding steady until the next milestone. Product
   /// placeholders only — no real-world status implied.
   static const _milestoneTitles = <int, String>{
-    1: 'Forge Initiate',
+    1: 'Initiate',
     5: 'Builder',
     10: 'Architect',
-    20: 'Forge Master',
+    20: 'Master',
   };
 
   static const _milestoneDescriptions = <int, String>{
-    1: 'Just getting the forge lit.',
+    1: 'Just getting the current flowing.',
     5: 'Turning up consistently, one mission at a time.',
     10: 'Shaping real structure out of daily effort.',
     20: 'Discipline that speaks for itself.',

@@ -16,7 +16,7 @@ class TermsOfServicePage extends StatelessWidget {
     LegalSection(
       heading: 'Status',
       body:
-          'Forge does not yet have reviewed, approved Terms of Service. '
+          'CAN does not yet have reviewed, approved Terms of Service. '
           'This page exists so the route/surface is real ahead of '
           'launch, not to assert terms nobody has agreed to. Do not '
           'treat anything below as binding.',

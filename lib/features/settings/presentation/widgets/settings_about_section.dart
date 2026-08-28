@@ -15,7 +15,7 @@ import '../../../../core/theme/forge_tokens.dart';
 class SettingsAboutSection extends StatelessWidget {
   const SettingsAboutSection({super.key});
 
-  static const _version = '1.0.0-rc.2+3';
+  static const _version = '1.0.0-rc.3+4';
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +26,7 @@ class SettingsAboutSection extends StatelessWidget {
       children: [
         Text('About', style: Theme.of(context).textTheme.titleSmall),
         SizedBox(height: tokens.spacing.space1),
-        Text('Forge', style: Theme.of(context).textTheme.bodyMedium),
+        Text('CAN', style: Theme.of(context).textTheme.bodyMedium),
         Text(
           'Version $_version',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(

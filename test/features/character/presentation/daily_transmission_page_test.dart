@@ -32,7 +32,7 @@ void main() {
 
     // Frozen mid-first-line: the subtitle panel must show line one, not a
     // later line or nothing.
-    expect(find.textContaining('the forge is ready'), findsOneWidget);
+    expect(find.textContaining('the current is ready'), findsOneWidget);
     expect(find.textContaining('1 /'), findsOneWidget);
   });
 
@@ -105,7 +105,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Transcript'), findsOneWidget);
-    expect(find.textContaining('the forge is ready'), findsWidgets);
+    expect(find.textContaining('the current is ready'), findsWidgets);
 
     await tester.tap(find.widgetWithText(ForgeButton, 'Close'));
     await tester.pumpAndSettle();

@@ -92,7 +92,7 @@ class _SignUpPageState extends ConsumerState<SignUpPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const AuthHeader(
-                title: 'Forge yourself',
+                title: 'Prove you can.',
                 subtitle: 'Create an account to start your first streak.',
               ),
               SizedBox(height: tokens.spacing.space6),

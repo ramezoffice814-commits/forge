@@ -16,7 +16,7 @@ class AuthHeader extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('FORGE', style: Theme.of(context).textTheme.titleSmall),
+        Text('CAN', style: Theme.of(context).textTheme.titleSmall),
         SizedBox(height: tokens.spacing.space2),
         Text(title, style: Theme.of(context).textTheme.headlineMedium),
         if (subtitle != null) ...[

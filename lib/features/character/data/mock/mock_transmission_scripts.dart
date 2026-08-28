@@ -55,7 +55,7 @@ abstract final class MockTransmissionScripts {
       date: referenceDate,
       introLabel: 'Incoming Transmission',
       dialogueLines: [
-        _line('n1', '$displayName… the forge is ready.'),
+        _line('n1', '$displayName… the current is ready.'),
         _line(
           'n2',
           'Yesterday showed consistency.',
@@ -89,7 +89,7 @@ abstract final class MockTransmissionScripts {
       date: referenceDate,
       introLabel: 'First Transmission',
       dialogueLines: [
-        _line('f1', 'Welcome to the Forge, $displayName.'),
+        _line('f1', 'Welcome to the Current, $displayName.'),
         _line('f2', 'Your first mission is deliberately small.'),
         _line(
           'f3',
@@ -106,7 +106,7 @@ abstract final class MockTransmissionScripts {
       requiresProof: mission.requiresProof,
       completionConditions: _completionConditions(mission),
       accessibilitySummary:
-          'The Watcher welcomes you to the Forge and assigns a small first '
+          'The Watcher welcomes you to the Current and assigns a small first '
           'mission: ${mission.title}, worth ${mission.xpReward} XP.',
     );
   }

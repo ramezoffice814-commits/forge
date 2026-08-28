@@ -18,19 +18,28 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="Forge — daily discipline challenge app">
+  <meta name="description" content="CAN — daily discipline challenge app">
+  <!-- Matches ForgeColors.background (Roadmap Item 21) — keeps mobile
+       browser chrome and the pre-boot body background consistent with
+       the app's own deep navy/near-black theme, no default blue. -->
+  <meta name="theme-color" content="#161826">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="forge">
+  <meta name="apple-mobile-web-app-title" content="CAN">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>forge</title>
+  <title>CAN</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Prevents a white flash before the Flutter engine paints its first
+       frame (Roadmap Item 21 section 12) — matches ForgeColors.background. */
+    html, body { background-color: #161826; }
+  </style>
 </head>
 <body>
   <!--

@@ -22,7 +22,7 @@ class SupabaseAuthRepository implements AuthRepository {
       id: user.id,
       displayName:
           (metadata?['display_name'] as String?) ??
-          (user.email?.split('@').first ?? 'Forge user'),
+          (user.email?.split('@').first ?? 'CAN user'),
       email: user.email ?? '',
       avatarUrl: metadata?['avatar_url'] as String?,
       createdAt: DateTime.tryParse(user.createdAt) ?? DateTime.now(),

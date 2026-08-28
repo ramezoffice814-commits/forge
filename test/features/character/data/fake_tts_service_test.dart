@@ -26,8 +26,8 @@ void main() {
   test('speak() auto-completes and records the text', () async {
     final tts = FakeTtsService();
     await tts.initialize();
-    await tts.speak('Ramez, the forge is ready.');
-    expect(tts.spokenTexts, ['Ramez, the forge is ready.']);
+    await tts.speak('Ramez, the current is ready.');
+    expect(tts.spokenTexts, ['Ramez, the current is ready.']);
     expect(tts.state, TtsPlaybackState.stopped);
   });
 

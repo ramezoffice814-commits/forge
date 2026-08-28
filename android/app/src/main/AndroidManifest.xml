@@ -16,7 +16,7 @@
          API to exist at all, it does not itself show anything. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
-        android:label="forge"
+        android:label="CAN"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
