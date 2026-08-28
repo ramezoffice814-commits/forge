@@ -72,8 +72,82 @@ class _DashboardBody extends ConsumerWidget {
         message: "We couldn't load your dashboard. Please try again later.",
       ),
       DashboardPopulated(:final overview, :final isOfflineCache) =>
-        _DashboardContent(overview: overview, isOfflineCache: isOfflineCache),
+        _DashboardEntrance(
+          child: _DashboardContent(
+            overview: overview,
+            isOfflineCache: isOfflineCache,
+          ),
+        ),
     };
+  }
+}
+
+/// Roadmap Item 21 — a restrained one-shot entrance (opacity 0->1, ~10px
+/// upward translation) the first time Dashboard's real content actually
+/// renders, so it feels connected to the CAN opening overlay that likely
+/// just dissolved into it rather than popping in cold. Deliberately does
+/// NOT coordinate with `CanOpeningOverlay` directly (which stays router-
+/// and-destination agnostic, see its own doc comment) — instead this
+/// relies on ordinary Flutter State lifecycle: this wrapper's State is
+/// created once when `DashboardPopulated`'s content first builds, and is
+/// preserved (not replayed) across subsequent rebuilds with fresh
+/// `overview` data, e.g. after completing a mission — only a full
+/// loading/error/reload cycle remounts it, which is an acceptably rare,
+/// low-cost replay for a sub-half-second fade, not the kind of frequent
+/// annoyance the cinematic sequence itself has to guard against.
+class _DashboardEntrance extends StatefulWidget {
+  const _DashboardEntrance({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_DashboardEntrance> createState() => _DashboardEntranceState();
+}
+
+class _DashboardEntranceState extends State<_DashboardEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _curve;
+  bool _reducedMotion = false;
+  bool _initialized = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_initialized) return;
+    _initialized = true;
+    _reducedMotion = MediaQuery.of(context).disableAnimations;
+    _controller = AnimationController(
+      vsync: this,
+      duration: _reducedMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 360),
+    );
+    _curve = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+    _controller.forward();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_reducedMotion) return widget.child;
+    return AnimatedBuilder(
+      animation: _curve,
+      builder: (context, child) => Opacity(
+        key: const Key('dashboard-entrance-opacity'),
+        opacity: _curve.value,
+        child: Transform.translate(
+          offset: Offset(0, (1 - _curve.value) * 12),
+          child: child,
+        ),
+      ),
+      child: widget.child,
+    );
   }
 }
 
