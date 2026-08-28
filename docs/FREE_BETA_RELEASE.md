@@ -177,8 +177,10 @@ GitHub Release would contain once approved; no release exists yet.
 
 **Not generated this pass** — no final, human-signed distributable APK
 exists yet to check-sum (generating a checksum for a debug or unsigned
-build and presenting it as final would be actively misleading). Once
-the human-signed APK exists:
+build and presenting it as final would be actively misleading). The
+signed-build CI workflow (see "Signed build path" below) generates one
+automatically as part of producing the APK, via `sha256sum` on the
+runner; the same command works locally once an APK exists:
 
 ```
 certutil -hashfile CAN-v1.0.0-beta.1+5.apk SHA256
@@ -187,6 +189,24 @@ certutil -hashfile CAN-v1.0.0-beta.1+5.apk SHA256
 (Windows; `shasum -a 256 <file>` on macOS/Linux) — the resulting hash
 gets published alongside the APK in the GitHub Release, so anyone can
 verify their download wasn't corrupted or tampered with in transit.
+
+## Signed build path (update)
+
+Local release builds remain blocked by this machine's Application
+Control policy (font-subset.exe, confirmed again this pass — not
+bypassed). Since the human signing key now exists (keystore verified,
+alias `can-beta` confirmed, certificate SHA-256 fingerprint captured —
+see [docs/ANDROID_BETA_SIGNING_SETUP.md](ANDROID_BETA_SIGNING_SETUP.md)
+for the full evidence), the selected path to an actual signed APK is a
+manual-dispatch-only GitHub Actions workflow
+(`.github/workflows/android_beta_signed_build.yml`) that builds and
+signs on a GitHub-hosted runner using repository secrets, uploads the
+result as a **private** workflow artifact (this repo is private), and
+is never triggered automatically. **Not run yet** — it requires the
+four repository secrets to be created first (exact steps in
+[docs/ANDROID_BETA_SIGNING_SETUP.md](ANDROID_BETA_SIGNING_SETUP.md)),
+and running it is a separate, explicit action for the human to take or
+request.
 
 ## Release notes (draft, Section 32)
 
