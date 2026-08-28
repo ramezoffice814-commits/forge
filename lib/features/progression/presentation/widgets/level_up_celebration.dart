@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter/services.dart';
 
 import '../../../../core/theme/forge_tokens.dart';
 import '../../../../shared/widgets/forge_card.dart';
@@ -43,6 +44,12 @@ class _LevelUpCelebrationState extends State<LevelUpCelebration>
     _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
     // A single, bounded run — never looping, never re-triggering itself.
     _controller.forward();
+    // Roadmap Item 21: one restrained haptic pulse for a major-action
+    // moment (level up), matching the same "never re-triggering" shape
+    // as the animation itself — no platform permission required
+    // (HapticFeedback is a core Flutter API), silently a no-op on
+    // platforms/devices without haptic support.
+    HapticFeedback.mediumImpact();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;

@@ -31,7 +31,7 @@ void main() {
         home: Scaffold(
           body: LevelUpCelebration(
             levelNumber: 2,
-            levelTitle: 'Forge Initiate',
+            levelTitle: 'Initiate',
             onDismiss: () => dismissed = true,
           ),
         ),
@@ -53,7 +53,7 @@ void main() {
         home: Scaffold(
           body: LevelUpCelebration(
             levelNumber: 3,
-            levelTitle: 'Forge Initiate',
+            levelTitle: 'Initiate',
             reducedMotion: true,
             onDismiss: () {},
           ),
@@ -76,7 +76,7 @@ void main() {
         home: Scaffold(
           body: LevelUpCelebration(
             levelNumber: 4,
-            levelTitle: 'Forge Initiate',
+            levelTitle: 'Initiate',
             onDismiss: () {},
           ),
         ),
