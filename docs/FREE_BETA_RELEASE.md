@@ -202,11 +202,51 @@ manual-dispatch-only GitHub Actions workflow
 (`.github/workflows/android_beta_signed_build.yml`) that builds and
 signs on a GitHub-hosted runner using repository secrets, uploads the
 result as a **private** workflow artifact (this repo is private), and
-is never triggered automatically. **Not run yet** — it requires the
-four repository secrets to be created first (exact steps in
-[docs/ANDROID_BETA_SIGNING_SETUP.md](ANDROID_BETA_SIGNING_SETUP.md)),
-and running it is a separate, explicit action for the human to take or
-request.
+is never triggered automatically.
+
+**First dispatch (run `33246791735`) — signing succeeded, verification
+script failed, now fixed:**
+
+The default branch had to be changed from `main` to `develop` first —
+`workflow_dispatch` workflows are only registered/listed by GitHub once
+their YAML file exists on the repository's default branch, confirmed
+empirically (the file was invisible to `gh workflow list` while it only
+existed on the feature branch and on a non-default `develop`). After
+PR #15 merged into the now-default `develop`, the workflow was
+dispatched once. `Build signed release APK` **succeeded** — a real
+release APK, signed with the human key, was produced. The workflow
+then failed at its own verification step, for two independent reasons:
+
+1. **Build-tools resolution.** GitHub's `ubuntu-latest` runners ship
+   several Android build-tools versions side by side (confirmed: this
+   local machine also has three — `36.0.0`, `36.1.0`, `37.0.0`). The
+   original step invoked tools via an unquoted wildcard glob
+   (`"$ANDROID_HOME"/build-tools/*/apksigner`); with more than one
+   match, the glob expands to multiple paths on one command line, so
+   the shell ran the first match as the command and passed the
+   *second* match as its first argument instead of `verify`/`dump
+   badging` — reproduced locally against the real local SDK layout.
+   Fixed by resolving one explicit, highest-version build-tools
+   directory (`find ... | sort -V | tail -n1`) and referencing tools by
+   the fully-resolved path, with `test -x` existence checks.
+2. **Certificate-fingerprint extraction.** The original `awk -F': '
+   '{print $2}'` assumed a signer line with exactly one `": "`
+   delimiter. Real `apksigner verify --print-certs` output prefixes the
+   line by scheme (`V2 Signer: certificate SHA-256 digest: <hex>`),
+   confirmed by running the real tool locally against a local APK — so
+   the line has two `": "` delimiters, and `$2` returned the label
+   text (`certificate SHA-256 digest`) rather than the hash. Fixed by
+   switching to `$NF` (last field), which is correct regardless of how
+   many `": "`-delimited prefixes precede the digest — re-verified
+   against both the real captured output and a synthetic `Signer #1`-
+   style line.
+
+Both fixes were tested **without dispatching the signed workflow
+again** — using the real local Android SDK, a real local (debug-signed)
+APK, and synthetic input lines matching the exact formats seen in the
+CI failure log and in local tool output. No signing secret was read or
+used for this testing. The workflow has not been redispatched; doing
+so is a separate, explicit next step for the human to authorize.
 
 ## Release notes (draft, Section 32)
 
