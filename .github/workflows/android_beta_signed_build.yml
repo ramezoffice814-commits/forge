@@ -88,30 +88,160 @@ jobs:
       - name: Build signed release APK
         run: flutter build apk --release
 
-      - name: Verify signing (public certificate fields only)
-        env:
-          STORE_PASSWORD: ${{ secrets.CAN_ANDROID_STORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.CAN_ANDROID_KEY_ALIAS }}
+      # Roadmap Item 22 (fix, post-run 33246791735) — the first version
+      # of this step invoked apksigner/aapt via "$ANDROID_HOME"/build-tools/*/TOOL.
+      # GitHub's ubuntu-latest runners ship several pre-installed
+      # build-tools versions side by side; an unquoted wildcard glob
+      # with more than one match expands to multiple paths on the same
+      # command line, so the *second* matched path landed as the tool's
+      # first argument instead of "verify"/"dump badging" — both tools'
+      # own error output ("Unsupported command: <path>") was them
+      # echoing back that misplaced argument. Resolving one explicit,
+      # highest-version build-tools directory up front avoids this
+      # class of bug entirely; no code below assumes glob behavior.
+      - name: Resolve Android SDK build-tools
+        id: sdk_tools
         run: |
           set -euo pipefail
-          echo "--- APK signer verification (apksigner) ---"
-          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs \
-            build/app/outputs/flutter-apk/app-release.apk \
-            | grep -v -i "pass\|warn" || true
-          echo "--- Keystore certificate metadata (keytool, public fields only) ---"
-          keytool -list -v -keystore "$RUNNER_TEMP/can-beta-release.jks" \
-            -alias "$KEY_ALIAS" -storepass "$STORE_PASSWORD" 2>&1 \
-            | grep -E "^Alias name|^Owner|^Valid from|^Certificate fingerprints|SHA256:"
-          echo "--- Package / version sanity check ---"
-          "$ANDROID_HOME"/build-tools/*/aapt dump badging \
-            build/app/outputs/flutter-apk/app-release.apk \
-            | grep -E "package: name=|versionName="
+          BUILD_TOOLS_DIR="$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n1)"
+          if [ -z "$BUILD_TOOLS_DIR" ]; then
+            echo "::error::No Android build-tools directory found under $ANDROID_HOME/build-tools"
+            exit 1
+          fi
+          APKSIGNER="$BUILD_TOOLS_DIR/apksigner"
+          AAPT="$BUILD_TOOLS_DIR/aapt"
+          test -x "$APKSIGNER" || { echo "::error::apksigner not found or not executable at $APKSIGNER"; exit 1; }
+          echo "Resolved build-tools directory: $BUILD_TOOLS_DIR"
+          echo "apksigner: $APKSIGNER"
+          echo "aapt present: $([ -x "$AAPT" ] && echo yes || echo no)"
+          {
+            echo "build_tools_dir=$BUILD_TOOLS_DIR"
+            echo "apksigner=$APKSIGNER"
+            echo "aapt=$AAPT"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Assert APK exists and is non-zero
+        run: |
+          set -euo pipefail
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          if [ ! -s "$APK_PATH" ]; then
+            echo "::error::$APK_PATH does not exist or is empty"
+            exit 1
+          fi
+          echo "APK present: $(wc -c < "$APK_PATH") bytes"
+
+      # A real cryptographic verification — no `|| true` anywhere in
+      # this step. If the APK's signature doesn't verify, or if the
+      # certificate fingerprint doesn't match the expected human key
+      # *as attached to the APK itself* (not just the source keystore),
+      # this step fails the job outright.
+      - name: Verify APK signature and certificate fingerprint
+        env:
+          EXPECTED_SHA256: "5C:BA:50:7F:7D:A4:01:08:0E:AE:58:13:42:87:A2:66:D3:FF:EC:09:B7:97:2C:B3:9F:C7:4E:4A:43:00:A5:C7"
+        run: |
+          set -euo pipefail
+          APKSIGNER="${{ steps.sdk_tools.outputs.apksigner }}"
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+
+          echo "--- apksigner verify (cryptographic, must pass) ---"
+          "$APKSIGNER" verify --verbose --print-certs "$APK_PATH" | tee apksigner_output.txt
+
+          echo "--- Extracting signer certificate SHA-256 from apksigner's own output ---"
+          # $NF, not $2 — verified locally against real apksigner output.
+          # Real signer lines are prefixed by scheme ("V2 Signer: certificate
+          # SHA-256 digest: <hex>"), not "Signer #1" as first assumed, so the
+          # line itself contains two ": " delimiters. awk -F': ' '{print $2}'
+          # would grab the middle field ("certificate SHA-256 digest") instead
+          # of the hash; $NF (last field) is correct regardless of how many
+          # ": "-delimited prefixes precede the digest.
+          ACTUAL_RAW="$(grep -E 'certificate SHA-256 digest' apksigner_output.txt | head -n1 | awk -F': ' '{print $NF}')"
+          if [ -z "$ACTUAL_RAW" ]; then
+            echo "::error::Could not parse a certificate SHA-256 digest from apksigner output"
+            exit 1
+          fi
+          # Normalize both sides the same way (strip colons, lowercase)
+          # before comparing — apksigner prints a bare lowercase hex
+          # digest, the expected value here is colon-separated/uppercase.
+          ACTUAL_NORM="$(echo "$ACTUAL_RAW" | tr -d ':' | tr 'A-Z' 'a-z')"
+          EXPECTED_NORM="$(echo "$EXPECTED_SHA256" | tr -d ':' | tr 'A-Z' 'a-z')"
+
+          echo "Certificate SHA-256 (from APK, as attached): $ACTUAL_RAW"
+
+          if [ "$ACTUAL_NORM" != "$EXPECTED_NORM" ]; then
+            echo "::error::Signing identity mismatch — the APK's attached certificate does not match the expected human key."
+            exit 1
+          fi
+          echo "Certificate fingerprint matches the expected human key."
+          rm -f apksigner_output.txt
+
+      # Verifies the *built APK's own embedded manifest*, not source
+      # files — a stale/incorrectly-configured build could otherwise
+      # pass source-level checks while producing a mismatched artifact.
+      - name: Verify package and version metadata
+        run: |
+          set -euo pipefail
+          AAPT="${{ steps.sdk_tools.outputs.aapt }}"
+          APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
+          EXPECTED_PACKAGE="com.forge.app.forge"
+          EXPECTED_VERSION_NAME="1.0.0-beta.1"
+          EXPECTED_VERSION_CODE="5"
+
+          if [ -x "$AAPT" ]; then
+            BADGING="$("$AAPT" dump badging "$APK_PATH")"
+          else
+            echo "aapt not available at resolved build-tools path, falling back to aapt2"
+            AAPT2="$(dirname "$AAPT")/aapt2"
+            test -x "$AAPT2" || { echo "::error::Neither aapt nor aapt2 is available"; exit 1; }
+            BADGING="$("$AAPT2" dump badging "$APK_PATH")"
+          fi
+
+          PACKAGE_LINE="$(echo "$BADGING" | grep -E "^package:" | head -n1)"
+          echo "$PACKAGE_LINE"
+
+          # Anchored to the start of the line, not a generic ".*name='"
+          # search — aapt's badging output also includes
+          # compileSdkVersionCodename='...', which contains the literal
+          # substring "name='" inside "Codename='"; a greedy unanchored
+          # pattern would match that instead of the real package name
+          # attribute (verified this exact collision before shipping
+          # this fix).
+          ACTUAL_PACKAGE="$(echo "$PACKAGE_LINE" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")"
+          ACTUAL_VERSION_NAME="$(echo "$PACKAGE_LINE" | sed -n "s/.*versionName='\([^']*\)'.*/\1/p")"
+          ACTUAL_VERSION_CODE="$(echo "$PACKAGE_LINE" | sed -n "s/.*versionCode='\([^']*\)'.*/\1/p")"
+
+          FAILED=0
+          [ "$ACTUAL_PACKAGE" = "$EXPECTED_PACKAGE" ] || { echo "::error::package mismatch: expected $EXPECTED_PACKAGE, got $ACTUAL_PACKAGE"; FAILED=1; }
+          [ "$ACTUAL_VERSION_NAME" = "$EXPECTED_VERSION_NAME" ] || { echo "::error::versionName mismatch: expected $EXPECTED_VERSION_NAME, got $ACTUAL_VERSION_NAME"; FAILED=1; }
+          [ "$ACTUAL_VERSION_CODE" = "$EXPECTED_VERSION_CODE" ] || { echo "::error::versionCode mismatch: expected $EXPECTED_VERSION_CODE, got $ACTUAL_VERSION_CODE"; FAILED=1; }
+          if [ "$FAILED" != "0" ]; then
+            exit 1
+          fi
+          echo "Package and version metadata confirmed: $ACTUAL_PACKAGE $ACTUAL_VERSION_NAME ($ACTUAL_VERSION_CODE)"
 
       - name: Generate checksum
         run: |
+          set -euo pipefail
           cd build/app/outputs/flutter-apk
-          sha256sum app-release.apk > app-release.apk.sha256
-          cat app-release.apk.sha256
+          sha256sum app-release.apk > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Stage release artifacts
+        run: |
+          set -euo pipefail
+          STAGE_DIR="release-artifacts"
+          rm -rf "$STAGE_DIR"
+          mkdir -p "$STAGE_DIR"
+          cp build/app/outputs/flutter-apk/app-release.apk "$STAGE_DIR/"
+          cp build/app/outputs/flutter-apk/SHA256SUMS.txt "$STAGE_DIR/"
+          echo "--- Staged files (names only) ---"
+          ls -la "$STAGE_DIR"
+          echo "--- Asserting no signing material is staged ---"
+          if find "$STAGE_DIR" -iname "*.jks" -o -iname "*.keystore" -o -iname "key.properties" -o -iname "*.pem" -o -iname "*.p12" | grep -q .; then
+            echo "::error::Signing material found in staged artifact directory — aborting upload"
+            find "$STAGE_DIR" -iname "*.jks" -o -iname "*.keystore" -o -iname "key.properties" -o -iname "*.pem" -o -iname "*.p12"
+            exit 1
+          fi
+          echo "Confirmed: no keystore/key.properties/pem/p12 files staged."
 
       - name: Clean up signing files (defense in depth)
         if: always()
@@ -122,8 +252,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: can-beta-signed-apk
-          path: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/flutter-apk/app-release.apk.sha256
+          path: release-artifacts/
           retention-days: 14
           if-no-files-found: error

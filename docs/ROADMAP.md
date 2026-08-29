@@ -642,6 +642,26 @@ human hasn't created yet; exact steps in
 [docs/ANDROID_BETA_SIGNING_SETUP.md](ANDROID_BETA_SIGNING_SETUP.md)).
 No signed APK exists yet.
 
+**Update**: the repository default branch was changed from `main` to
+`develop` (a pure GitHub-settings pointer change, zero commits/history
+touched) — required because `workflow_dispatch` workflows are only
+registered once their YAML exists on the default branch. PR #15 merged
+into `develop`; the signed-build workflow became dispatchable and was
+run exactly once (`33246791735`). Signing itself succeeded — a real
+release APK was built and signed with the human key — but the
+workflow's own verification step failed, from an unquoted build-tools
+wildcard glob (multiple installed Android build-tools versions on the
+runner broke `apksigner`/`aapt` invocation) and a certificate-
+fingerprint extraction bug (`awk` field selection assumed the wrong
+number of `": "` delimiters in `apksigner`'s real output). Both root
+causes were confirmed by re-reading the failure log and independently
+reproducing each locally against the real Android SDK and real tool
+output; both are now fixed in the workflow file and re-tested locally
+without touching any signing secret. Full root-cause writeup in
+[docs/FREE_BETA_RELEASE.md](FREE_BETA_RELEASE.md). The workflow has
+**not** been redispatched — that remains a separate, explicit human-
+authorized step. No signed APK exists yet.
+
 The beta environment decision (reuse `forge-staging` vs. a separate
 project) is a **conditional recommendation to reuse `forge-staging`**,
 gated on a human confirming its live Edge Function deployment/secrets/

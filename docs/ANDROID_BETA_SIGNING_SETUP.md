@@ -10,9 +10,28 @@ this project to create one.
 
 ## Status
 
-**LOCAL SIGNING CONFIG COMPLETE — LOCAL BUILD STILL BLOCKED BY
-APPLICATION CONTROL.** Updated with evidence from this pass, none of
-it obtained by printing or logging any password value:
+**LOCAL SIGNING CONFIG COMPLETE — FIRST SIGNED CI DISPATCH FAILED AT A
+VERIFICATION-SCRIPT BUG (NOT A SIGNING FAILURE) — FIX APPLIED, NOT YET
+REDISPATCHED.** The default branch was changed from `main` to
+`develop` (required for `workflow_dispatch` registration — GitHub only
+lists a manual workflow once its YAML exists on the default branch),
+PR #15 was merged into `develop`, and the workflow was dispatched
+exactly once (run `33246791735`). The `Build signed release APK` step
+**succeeded** — the human key signed a real release APK. The workflow
+failed later, at its own verification step, for two reasons found by
+re-reading the failure log and reproducing both locally (see
+[FREE_BETA_RELEASE.md](FREE_BETA_RELEASE.md) for the full root-cause
+writeup): an unquoted build-tools wildcard glob that broke
+`apksigner`/`aapt` invocation, and a certificate-fingerprint extraction
+pattern that grabbed the wrong `awk` field against apksigner's real
+output format. Both are fixed in
+`.github/workflows/android_beta_signed_build.yml` and re-tested locally
+against real tooling and real APK output — **without using any signing
+secret** — before this doc was updated. The workflow has not been
+redispatched; that is a separate, explicit next step.
+
+Evidence from the local signing-config setup itself (none of it
+obtained by printing or logging any password value):
 
 - The human-owned keystore exists at
   `C:\Users\LOQ\CAN-secrets\can-beta-release.jks` (confirmed via
