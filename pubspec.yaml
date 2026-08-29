@@ -29,7 +29,17 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # Roadmap Item 21: rc.2 -> rc.3, build 3 -> 4 (CAN rebrand + cinematic
 # opening round — see docs/CAN_REBRAND_AUDIT.md). Still not the final
 # 1.0.0 release; the -rc.N suffix stays until one is actually approved.
-version: 1.0.0-rc.3+4
+# Roadmap Item 22: rc.3 -> beta.1, build 4 -> 5 (Free Public Beta Launch
+# — see docs/FREE_BETA_RELEASE.md). Deliberate identifier switch, not
+# just a number bump: "-rc." (release candidate) implies "nearly ready
+# for the final production release," which was accurate for the
+# internal hardening track (Items 18-20) but is misleading for what
+# this build actually is — the first version real external users will
+# install and use, with known rough edges and mock-only AI/Transmission
+# content. "-beta.N" says that honestly. Build number keeps
+# incrementing regardless of the label change (Android's versionCode
+# must strictly increase across every upload, beta or not).
+version: 1.0.0-beta.1+5
 
 environment:
   sdk: ^3.12.2

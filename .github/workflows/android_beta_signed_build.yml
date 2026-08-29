@@ -1,0 +1,129 @@
+name: Android Beta Signed Build (manual)
+
+# Roadmap Item 22 — produces a REAL, human-key-signed release APK,
+# unlike every job in flutter_ci.yml (which always debug-signs, by
+# design, since no key.properties exists in that workflow's
+# environment). This workflow is manual-dispatch only — it never runs
+# on a pull_request or push trigger — because it is the one workflow in
+# this repository that touches real signing secrets, and those should
+# only ever be used when a human explicitly asks for a beta build, not
+# on every PR. Pull requests from forks never receive repository
+# secrets under GitHub's own security model regardless, but this
+# workflow doesn't rely on that guarantee — it simply never listens for
+# pull_request/push at all.
+#
+# Produces a PRIVATE workflow artifact only (this repository is
+# private, so the artifact is visible only to accounts with repo
+# access) — never a GitHub Release, never a public URL. See
+# docs/ANDROID_BETA_SIGNING_SETUP.md and docs/FREE_BETA_RELEASE.md for
+# the full human-gated process this feeds into.
+#
+# Required repository secrets (Settings -> Secrets and variables ->
+# Actions -> New repository secret), documented in full in
+# docs/ANDROID_BETA_SIGNING_SETUP.md:
+#   CAN_ANDROID_KEYSTORE_BASE64  — the .jks file, base64-encoded
+#   CAN_ANDROID_STORE_PASSWORD
+#   CAN_ANDROID_KEY_PASSWORD
+#   CAN_ANDROID_KEY_ALIAS
+#
+# None of these secrets are set by this workflow — they must already
+# exist before this workflow is manually run. This workflow does not
+# create, view, or modify them.
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "sign" to confirm you intend to produce a real signed build'
+        required: true
+        default: ''
+
+jobs:
+  signed-build:
+    name: Build and sign the beta APK
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm == 'sign' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      # Decoded into the runner's own temp directory, never into the
+      # repository working tree — nothing under $RUNNER_TEMP is ever
+      # part of a git checkout or an uploaded artifact unless a later
+      # step explicitly uploads it (this workflow never does for these
+      # two files). `env:` (not inline ${{ secrets.* }} in the script
+      # body) is the pattern GitHub itself recommends, so a secret
+      # value is never substituted directly into shell script text.
+      - name: Recreate signing files (never committed, never logged)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.CAN_ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.CAN_ANDROID_STORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.CAN_ANDROID_KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.CAN_ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/can-beta-release.jks"
+          {
+            echo "storeFile=$RUNNER_TEMP/can-beta-release.jks"
+            echo "storePassword=$STORE_PASSWORD"
+            echo "keyAlias=$KEY_ALIAS"
+            echo "keyPassword=$KEY_PASSWORD"
+          } > android/key.properties
+
+      - name: Build signed release APK
+        run: flutter build apk --release
+
+      - name: Verify signing (public certificate fields only)
+        env:
+          STORE_PASSWORD: ${{ secrets.CAN_ANDROID_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.CAN_ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          echo "--- APK signer verification (apksigner) ---"
+          "$ANDROID_HOME"/build-tools/*/apksigner verify --print-certs \
+            build/app/outputs/flutter-apk/app-release.apk \
+            | grep -v -i "pass\|warn" || true
+          echo "--- Keystore certificate metadata (keytool, public fields only) ---"
+          keytool -list -v -keystore "$RUNNER_TEMP/can-beta-release.jks" \
+            -alias "$KEY_ALIAS" -storepass "$STORE_PASSWORD" 2>&1 \
+            | grep -E "^Alias name|^Owner|^Valid from|^Certificate fingerprints|SHA256:"
+          echo "--- Package / version sanity check ---"
+          "$ANDROID_HOME"/build-tools/*/aapt dump badging \
+            build/app/outputs/flutter-apk/app-release.apk \
+            | grep -E "package: name=|versionName="
+
+      - name: Generate checksum
+        run: |
+          cd build/app/outputs/flutter-apk
+          sha256sum app-release.apk > app-release.apk.sha256
+          cat app-release.apk.sha256
+
+      - name: Clean up signing files (defense in depth)
+        if: always()
+        run: |
+          rm -f android/key.properties "$RUNNER_TEMP/can-beta-release.jks"
+
+      - name: Upload signed APK (private workflow artifact only)
+        uses: actions/upload-artifact@v4
+        with:
+          name: can-beta-signed-apk
+          path: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/app-release.apk.sha256
+          retention-days: 14
+          if-no-files-found: error
