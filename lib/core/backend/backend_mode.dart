@@ -26,15 +26,23 @@ class UnsafeBackendModeException implements Exception {
 /// requested but Supabase isn't configured. Pure and synchronous — no
 /// `kReleaseMode`/`AppConfig` reads inside — so it's testable with
 /// synthetic inputs.
+///
+/// [isAuthorizedBetaBuild] mirrors
+/// `assertAuthRepositoryConfigIsSafe`'s own parameter of the same name
+/// (see `lib/features/auth/data/auth_repository_config_guard.dart` and
+/// `AppConfig.isPublicBetaBuild`) — the two guards must never drift
+/// apart on which release+mock combination is actually authorized.
 void assertBackendModeConfigIsSafe({
   required bool isRelease,
   required bool isMock,
   required bool isSupabaseConfigured,
+  bool isAuthorizedBetaBuild = false,
 }) {
-  if (isRelease && isMock) {
+  if (isRelease && isMock && !isAuthorizedBetaBuild) {
     throw const UnsafeBackendModeException(
       'Refusing to run a release build against the mock backend. Build '
-      'with --dart-define=APP_ENV=live and Supabase credentials.',
+      'with --dart-define=APP_ENV=live and Supabase credentials, or '
+      '--dart-define=CAN_PUBLIC_BETA=true for an authorized beta build.',
     );
   }
   if (!isMock && !isSupabaseConfigured) {
@@ -56,11 +64,13 @@ BackendMode resolveBackendMode({
   required bool isRelease,
   required bool isMock,
   required bool isSupabaseConfigured,
+  bool isAuthorizedBetaBuild = false,
 }) {
   assertBackendModeConfigIsSafe(
     isRelease: isRelease,
     isMock: isMock,
     isSupabaseConfigured: isSupabaseConfigured,
+    isAuthorizedBetaBuild: isAuthorizedBetaBuild,
   );
   return isMock ? BackendMode.mock : BackendMode.liveSupabase;
 }

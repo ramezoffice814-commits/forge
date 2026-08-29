@@ -61,6 +61,24 @@ abstract final class AppConfig {
   static bool get isStaging => supabaseTarget == SupabaseTarget.staging;
   static bool get isProduction => supabaseTarget == SupabaseTarget.production;
 
+  /// Explicit, compile-time-only escape hatch for
+  /// [assertAuthRepositoryConfigIsSafe]/[assertBackendModeConfigIsSafe]'s
+  /// "refuse a release build wired to mock" rule. That rule exists to
+  /// catch someone *forgetting* to configure live Supabase before a real
+  /// production release — it was written before Roadmap Item 22 ("Free
+  /// Public Beta Launch") introduced a release build that is
+  /// *deliberately* mock-only and zero-cost. Rather than weakening the
+  /// guard for every release build, this names the one case it should
+  /// let through: a build that explicitly declares itself an authorized
+  /// public beta via `--dart-define=CAN_PUBLIC_BETA=true` (set by
+  /// `.github/workflows/android_beta_signed_build.yml`, not a secret —
+  /// just a build-intent flag). Defaults to `false`, so a release build
+  /// that omits this flag is refused exactly as before.
+  static const bool isPublicBetaBuild = bool.fromEnvironment(
+    'CAN_PUBLIC_BETA',
+    defaultValue: false,
+  );
+
   /// `SUPABASE_TARGET` is required, not just `SUPABASE_URL`/
   /// `SUPABASE_ANON_KEY` — a live build with credentials but no named
   /// target is exactly the "which environment is this actually pointed

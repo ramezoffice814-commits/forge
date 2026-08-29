@@ -57,6 +57,48 @@ void main() {
       );
       expect(mode, BackendMode.liveSupabase);
     });
+
+    // Regression coverage for the real-device startup-routing incident
+    // (docs/ANDROID_BETA_DEVICE_TEST.md) — mirrors
+    // auth_repository_config_guard_test.dart's coverage of the identical
+    // guard shape in backend mode selection.
+    test('an authorized public beta build may run a release build against '
+        'the mock backend', () {
+      final mode = resolveBackendMode(
+        isRelease: true,
+        isMock: true,
+        isSupabaseConfigured: false,
+        isAuthorizedBetaBuild: true,
+      );
+      expect(mode, BackendMode.mock);
+    });
+
+    test('an unauthorized release build against the mock backend is still '
+        'refused when isAuthorizedBetaBuild is not explicitly passed', () {
+      expect(
+        () => resolveBackendMode(
+          isRelease: true,
+          isMock: true,
+          isSupabaseConfigured: false,
+        ),
+        throwsA(isA<UnsafeBackendModeException>()),
+      );
+    });
+
+    test(
+      'isAuthorizedBetaBuild does not bypass the live-misconfiguration check',
+      () {
+        expect(
+          () => resolveBackendMode(
+            isRelease: false,
+            isMock: false,
+            isSupabaseConfigured: false,
+            isAuthorizedBetaBuild: true,
+          ),
+          throwsA(isA<UnsafeBackendModeException>()),
+        );
+      },
+    );
   });
 
   group('buildBackendModeStatus', () {

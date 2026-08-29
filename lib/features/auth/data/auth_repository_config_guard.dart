@@ -15,15 +15,22 @@ class UnsafeAuthConfigException implements Exception {
 /// credentials are missing. Pure and synchronous on purpose — no
 /// `kReleaseMode`/`AppConfig` reads inside, so it's exercisable with
 /// synthetic inputs in tests rather than only via a real release build.
+///
+/// [isAuthorizedBetaBuild] is the one deliberate exception to the first
+/// rule (see [AppConfig.isPublicBetaBuild]'s doc comment for why a
+/// release+mock combination can be intentional, not a mistake) — it has
+/// no bearing on the second rule, which is about live mode specifically.
 void assertAuthRepositoryConfigIsSafe({
   required bool isRelease,
   required bool isMock,
   required bool isSupabaseConfigured,
+  bool isAuthorizedBetaBuild = false,
 }) {
-  if (isRelease && isMock) {
+  if (isRelease && isMock && !isAuthorizedBetaBuild) {
     throw const UnsafeAuthConfigException(
       'Refusing to run a release build with mock auth. Build with '
-      '--dart-define=APP_ENV=live and Supabase credentials.',
+      '--dart-define=APP_ENV=live and Supabase credentials, or '
+      '--dart-define=CAN_PUBLIC_BETA=true for an authorized beta build.',
     );
   }
   if (!isMock && !isSupabaseConfigured) {

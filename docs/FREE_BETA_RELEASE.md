@@ -148,21 +148,21 @@ justification yet for a first beta round.
 
 ## GitHub Release plan (Section 30) — not created
 
-**Release title** (example): `CAN Public Beta — 1.0.0-beta.1`
+**Release title** (example): `CAN Public Beta — 1.0.0-beta.2`
 
 **Assets** (once a human-signed APK exists, per
 [docs/ANDROID_BETA_SIGNING_SETUP.md](ANDROID_BETA_SIGNING_SETUP.md)):
 
-- `CAN-v1.0.0-beta.1+5.apk` — the signed release APK.
-- `CAN-v1.0.0-beta.1+5.apk.sha256` — its checksum (see below).
+- `CAN-v1.0.0-beta.2+6.apk` — the signed release APK.
+- `CAN-v1.0.0-beta.2+6.apk.sha256` — its checksum (see below).
 - Release notes (see below), as the release body.
 
 **Release body should include**:
 
 - Version and build number.
 - SHA256 checksum, and how to verify it (`certutil -hashfile
-  CAN-v1.0.0-beta.1+5.apk SHA256` on Windows, `shasum -a 256
-  CAN-v1.0.0-beta.1+5.apk` on macOS/Linux).
+  CAN-v1.0.0-beta.2+6.apk SHA256` on Windows, `shasum -a 256
+  CAN-v1.0.0-beta.2+6.apk` on macOS/Linux).
 - Installation instructions (link to
   [docs/ANDROID_BETA_DEVICE_TEST.md](ANDROID_BETA_DEVICE_TEST.md)'s
   "Install" section).
@@ -183,7 +183,7 @@ automatically as part of producing the APK, via `sha256sum` on the
 runner; the same command works locally once an APK exists:
 
 ```
-certutil -hashfile CAN-v1.0.0-beta.1+5.apk SHA256
+certutil -hashfile CAN-v1.0.0-beta.2+6.apk SHA256
 ```
 
 (Windows; `shasum -a 256 <file>` on macOS/Linux) — the resulting hash
@@ -245,14 +245,75 @@ Both fixes were tested **without dispatching the signed workflow
 again** — using the real local Android SDK, a real local (debug-signed)
 APK, and synthetic input lines matching the exact formats seen in the
 CI failure log and in local tool output. No signing secret was read or
-used for this testing. The workflow has not been redispatched; doing
-so is a separate, explicit next step for the human to authorize.
+used for this testing.
+
+**Second dispatch (run `33261115870`, `develop` @
+`c138bdb2aefe3d22eee4b789a1a422142c7bb8af`) — signing, verification,
+and artifact upload all succeeded.** Every static check the workflow
+runs against the built APK passed: cryptographic signature, certificate
+fingerprint, package ID, version, checksum, artifact contents. The
+signed APK (`1.0.0-beta.1+5`) was downloaded, checksum-verified, and
+installed on a real Android device for the first time — see
+"Real-device signed-APK test result" immediately below for what that
+static verification could not catch.
+
+## Real-device signed-APK test result (first real Android device test)
+
+Build `1.0.0-beta.1+5` installed and **launched** successfully, then
+immediately crashed to an in-app "Not found" / "Page not found" / "No
+route for '/splash'." screen. Full root-cause trace (confirmed by
+reading the installed `go_router` package's own source, not
+speculation):
+
+1. `GoRouter.errorBuilder` fires for *any* failure while resolving a
+   location, not only a genuinely unregistered path — including any
+   exception thrown inside the top-level `redirect` callback. go_router
+   catches such an exception and wraps it as `GoException('Exception
+   during redirect: $exception')`, available via `state.error`.
+2. `AuthStateAwareRedirectPolicy.redirect()` reads
+   `authStateNotifierProvider`, whose `build()` reads
+   `authRepositoryProvider`, whose body calls
+   `assertAuthRepositoryConfigIsSafe(isRelease: kReleaseMode, isMock:
+   AppConfig.isMock, ...)`.
+3. This exact build is `kReleaseMode: true` (a real `flutter build apk
+   --release`) and `AppConfig.isMock: true` (the CI workflow's build
+   step passed no `--dart-define`, so `AppConfig.environment` defaulted
+   to `mock` — intentional for this zero-cost beta). The guard's rule
+   — "refuse a release build wired to mock auth" — was written to catch
+   someone *forgetting* to configure live Supabase before an eventual
+   production Play Store release; it had no concept of an intentional
+   mock-mode public beta release, so it threw
+   `UnsafeAuthConfigException('Refusing to run a release build with
+   mock auth...')` on literally the first redirect evaluation at
+   startup — before a single frame past splash could render correctly.
+4. This app's own `errorBuilder` (in `lib/core/router/app_router.dart`)
+   never read `state.error` — it always synthesized `"No route for
+   '${state.uri}'."` regardless of the real cause, which is why a
+   config-guard exception looked identical to an actually-unregistered
+   route.
+5. `backend_providers.dart`'s `backendModeProvider` carries the
+   identical guard (`assertBackendModeConfigIsSafe`) and would have
+   thrown the same way the moment any screen past sign-in read a
+   backend-touching provider — this was not splash-specific, it would
+   have blocked reaching Dashboard/home too.
+
+**Fix** (`fix/startup-routing-release-mock-guard` branch): both guards
+now accept an explicit `isAuthorizedBetaBuild` parameter, sourced from
+a new `AppConfig.isPublicBetaBuild` compile-time flag
+(`--dart-define=CAN_PUBLIC_BETA=true`, not a secret). The signed-build
+workflow's `Build signed release APK` step now passes that flag. The
+router's `errorBuilder` now shows `state.error`'s real message instead
+of always claiming "no route" — so any future misconfiguration of this
+kind is diagnosable immediately instead of looking like a routing bug.
+Version bumped to `1.0.0-beta.2+6` since build 5 never ran successfully
+on a real device. **A new signed APK has not yet been built or
+dispatched — real-device retest is required once one is.**
 
 ## Release notes (draft, Section 32)
 
 **DRAFT — not published.**
 
-> ## CAN Public Beta 1.0.0-beta.1
+> ## CAN Public Beta 1.0.0-beta.2
 >
 > This is an early public beta of CAN — a daily-discipline app built
 > around structured missions, progression, and fair competition.
@@ -297,6 +358,14 @@ misleading for what this build actually is once real external users
 install it — `-beta.N` says that honestly. Build number strictly
 incremented (4 → 5), preserving Android's `versionCode` monotonicity
 requirement regardless of the label change.
+
+**Update**: `1.0.0-beta.1+5` → `1.0.0-beta.2+6`. Build 5's signed APK
+installed and launched on a real Android device but crashed immediately
+at startup — see "Real-device signed-APK test result" below and
+[docs/ANDROID_BETA_DEVICE_TEST.md](ANDROID_BETA_DEVICE_TEST.md). Build 5
+was never a working app on a real device, so the beta identifier itself
+bumps (not just the build number) to honestly mark this as a new, fixed
+iteration rather than a patch to something that ever actually ran.
 
 ## What this document does not do
 

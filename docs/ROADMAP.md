@@ -677,6 +677,35 @@ distribution requires the human signing key, the beta-environment
 confirmation, and explicit Human Launch Approval, none of which this
 item is authorized to supply or grant itself.
 
+**Update — first real Android device test found a critical startup
+crash, now fixed:** the second signed build (run `33261115870`) passed
+every static verification the CI workflow performs, was downloaded,
+checksum-verified, and installed on a real Android device — the first
+time any build from this project ran on real hardware. It launched,
+then immediately crashed to a "No route for '/splash'." screen. Full
+trace confirmed via the installed `go_router` package's own source
+(not speculation): `/splash` was correctly registered all along: the
+real cause was `assertAuthRepositoryConfigIsSafe`/
+`assertBackendModeConfigIsSafe` (Items 18-19 production-safety guards)
+correctly refusing to let a *release* build run against the *mock*
+backend — a rule written before this item's own intentional,
+zero-cost, mock-only public beta existed as a legitimate exception to
+it. The router's own `errorBuilder` compounded the misdiagnosis risk by
+always claiming "No route for '<uri>'" regardless of the real thrown
+error, hiding the true cause behind what looked exactly like a missing
+route. Fixed on both counts (see
+[docs/FREE_BETA_RELEASE.md](FREE_BETA_RELEASE.md) and
+[docs/ANDROID_BETA_DEVICE_TEST.md](ANDROID_BETA_DEVICE_TEST.md) for the
+full writeup): both guards now accept an explicit
+`AppConfig.isPublicBetaBuild` flag
+(`--dart-define=CAN_PUBLIC_BETA=true`, wired into the signed-build
+workflow, not a secret), and the router's `errorBuilder` now surfaces
+the real error instead of a generic message. Version bumped to
+`1.0.0-beta.2+6` since build 5 never ran successfully on a real device.
+Delivered via PR into `develop`, not merged by this pass. **A new
+signed APK has not been built or dispatched yet — real-device retest is
+required once one is.**
+
 ## Next
 
 Item 22 Phase B (the actual signed build, GitHub Release, and any

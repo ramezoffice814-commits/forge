@@ -45,4 +45,51 @@ void main() {
       returnsNormally,
     );
   });
+
+  // Regression coverage for the real-device startup-routing incident
+  // (docs/ANDROID_BETA_DEVICE_TEST.md): the first signed beta APK
+  // crashed on launch because this guard refused release+mock
+  // unconditionally, with no way for an intentional public beta build
+  // to declare itself authorized.
+  test(
+    'an authorized public beta build may run a release build with mock auth',
+    () {
+      expect(
+        () => assertAuthRepositoryConfigIsSafe(
+          isRelease: true,
+          isMock: true,
+          isSupabaseConfigured: false,
+          isAuthorizedBetaBuild: true,
+        ),
+        returnsNormally,
+      );
+    },
+  );
+
+  test('an unauthorized release build with mock auth is still refused even '
+      'when isAuthorizedBetaBuild is not explicitly passed', () {
+    expect(
+      () => assertAuthRepositoryConfigIsSafe(
+        isRelease: true,
+        isMock: true,
+        isSupabaseConfigured: false,
+      ),
+      throwsA(isA<UnsafeAuthConfigException>()),
+    );
+  });
+
+  test(
+    'isAuthorizedBetaBuild does not bypass the live-misconfiguration check',
+    () {
+      expect(
+        () => assertAuthRepositoryConfigIsSafe(
+          isRelease: false,
+          isMock: false,
+          isSupabaseConfigured: false,
+          isAuthorizedBetaBuild: true,
+        ),
+        throwsA(isA<UnsafeAuthConfigException>()),
+      );
+    },
+  );
 }

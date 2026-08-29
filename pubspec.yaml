@@ -39,7 +39,17 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # content. "-beta.N" says that honestly. Build number keeps
 # incrementing regardless of the label change (Android's versionCode
 # must strictly increase across every upload, beta or not).
-version: 1.0.0-beta.1+5
+# Roadmap Item 22 (fix): beta.1 -> beta.2, build 5 -> 6. Build 5's
+# signed APK installed and launched on a real Android device but
+# crashed immediately at startup (assertAuthRepositoryConfigIsSafe/
+# assertBackendModeConfigIsSafe correctly refused to let a *release*
+# build run against the *mock* backend, not yet knowing an intentional
+# public-beta build was a legitimate exception to that rule — see
+# docs/ANDROID_BETA_DEVICE_TEST.md and docs/FREE_BETA_RELEASE.md). Build
+# 5 was never a working app on a real device, so this bumps the beta
+# identifier (not just the build number) to honestly mark it as a new,
+# fixed iteration rather than a patch to something that ever ran.
+version: 1.0.0-beta.2+6
 
 environment:
   sdk: ^3.12.2
