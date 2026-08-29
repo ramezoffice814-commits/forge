@@ -85,8 +85,20 @@ jobs:
             echo "keyPassword=$KEY_PASSWORD"
           } > android/key.properties
 
+      # CAN_PUBLIC_BETA=true is required for the built app to run at all
+      # — it is not a secret, just a build-intent flag read by
+      # AppConfig.isPublicBetaBuild (lib/core/config/app_config.dart).
+      # Without it, assertAuthRepositoryConfigIsSafe/
+      # assertBackendModeConfigIsSafe correctly refuse to let a release
+      # build run against the mock backend, which this beta intentionally
+      # does (zero-cost, no Supabase project required). Omitting this
+      # flag is exactly what caused the first real-device signed build to
+      # crash immediately on launch (misreported by the router's own
+      # errorBuilder as "No route for '/splash'" — see
+      # docs/ANDROID_BETA_DEVICE_TEST.md for the full incident and
+      # docs/FREE_BETA_RELEASE.md for the root-cause writeup).
       - name: Build signed release APK
-        run: flutter build apk --release
+        run: flutter build apk --release --dart-define=CAN_PUBLIC_BETA=true
 
       # Roadmap Item 22 (fix, post-run 33246791735) — the first version
       # of this step invoked apksigner/aapt via "$ANDROID_HOME"/build-tools/*/TOOL.
@@ -183,8 +195,8 @@ jobs:
           AAPT="${{ steps.sdk_tools.outputs.aapt }}"
           APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
           EXPECTED_PACKAGE="com.forge.app.forge"
-          EXPECTED_VERSION_NAME="1.0.0-beta.1"
-          EXPECTED_VERSION_CODE="5"
+          EXPECTED_VERSION_NAME="1.0.0-beta.2"
+          EXPECTED_VERSION_CODE="6"
 
           if [ -x "$AAPT" ]; then
             BADGING="$("$AAPT" dump badging "$APK_PATH")"

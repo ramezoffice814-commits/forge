@@ -115,9 +115,40 @@ below for the exact, current AWAITING status.
 
 ## Device verification status
 
-**AWAITING HUMAN DEVICE TEST.** No Android device or emulator exists
-in this environment. Every step above is prepared so a human with a
-real device can execute it — none of it has been performed or claimed
-as verified by this pass. This is reported honestly, exactly as every
-prior item (17 through 21) has reported the same gap, not newly
-introduced by Item 22.
+**FIRST REAL ANDROID DEVICE TEST PERFORMED — STARTUP ROUTING FAILED,
+NOW FIXED, RETEST REQUIRED.** Build `1.0.0-beta.1+5` (signed workflow
+run `33261115870`) was downloaded, checksum-verified, and installed on
+a real Android device by the human owner — the first time any build
+from this project has run on real Android hardware (every prior local
+build attempt was blocked by this development machine's Application
+Control policy, and CI's own verification steps only inspect the built
+APK's signature/package/version, they never launch it). Result:
+
+- **SIGNED APK INSTALLATION = PASS**
+- **SIGNED APK LAUNCH = PASS**
+- **STARTUP ROUTING = FAIL**
+  - Failure: `Not found` / `Page not found` / `No route for '/splash'.`
+  - Root cause (fully traced, not the literal "unregistered route" the
+    error text implied — see
+    [docs/FREE_BETA_RELEASE.md](FREE_BETA_RELEASE.md) for the full
+    writeup): `/splash` **was** correctly registered. A synchronous
+    exception thrown deep in provider construction — reached only
+    through the router's own `redirect` callback —
+    (`assertAuthRepositoryConfigIsSafe`/
+    `assertBackendModeConfigIsSafe` correctly refusing to let a
+    *release* build run against the *mock* backend, not yet knowing an
+    intentional public beta was a legitimate exception to that rule)
+    was caught by go_router and routed to `errorBuilder`, whose message
+    was hardcoded to always claim "No route for '\<uri\>'" regardless of
+    the real cause. Fixed on both counts: the guards now accept an
+    explicit `CAN_PUBLIC_BETA=true` build flag
+    (`AppConfig.isPublicBetaBuild`), and `errorBuilder` now surfaces the
+    real underlying error instead of a generic, misleading message.
+  - This is a genuine regression finding from real-device testing, not
+    a hypothetical — recorded honestly rather than silently patched
+    over.
+
+**Build `1.0.0-beta.2+6` contains the fix but has not yet been built,
+signed, or tested on a real device — REAL_DEVICE_RETEST_REQUIRED = YES.**
+Every checklist item above still needs to be executed fresh against
+that build once a new signed APK is dispatched and authorized.

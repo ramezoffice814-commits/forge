@@ -42,8 +42,21 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: AppRoutePaths.splash,
     refreshListenable: refreshListenable,
     redirect: (context, state) => authRedirect.redirect(context, state),
-    errorBuilder: (context, state) =>
-        NotFoundPage(message: "No route for '${state.uri}'."),
+    // go_router invokes errorBuilder for *any* failure while resolving a
+    // location — not just a genuinely unregistered path, but also an
+    // exception thrown inside `redirect` (or anything it reads, like the
+    // auth/backend release-safety guards). state.error is always
+    // populated with a real, safe-to-display GoException in both cases
+    // (go_router wraps a thrown exception as
+    // `GoException('Exception during redirect: $exception')`) — using it
+    // here instead of always claiming "No route for '<uri>'" is what
+    // makes a real startup exception distinguishable from an actual
+    // unmatched route, rather than looking identical to one (see the
+    // real-device startup-routing incident this fixes, documented in
+    // docs/ANDROID_BETA_DEVICE_TEST.md).
+    errorBuilder: (context, state) => NotFoundPage(
+      message: state.error?.message ?? "No route for '${state.uri}'.",
+    ),
     routes: [
       GoRoute(
         path: AppRoutePaths.splash,

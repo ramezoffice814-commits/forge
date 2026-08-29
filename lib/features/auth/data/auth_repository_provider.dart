@@ -19,6 +19,7 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
     isRelease: kReleaseMode,
     isMock: AppConfig.isMock,
     isSupabaseConfigured: AppConfig.isSupabaseConfigured,
+    isAuthorizedBetaBuild: AppConfig.isPublicBetaBuild,
   );
 
   if (AppConfig.isMock) {

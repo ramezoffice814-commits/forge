@@ -29,6 +29,7 @@ final backendModeProvider = Provider<BackendMode>((ref) {
     isRelease: kReleaseMode,
     isMock: AppConfig.isMock,
     isSupabaseConfigured: AppConfig.isSupabaseConfigured,
+    isAuthorizedBetaBuild: AppConfig.isPublicBetaBuild,
   );
 });
 
