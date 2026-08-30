@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/app_routes.dart';
 import '../../../../core/theme/forge_tokens.dart';
+import '../../../../shared/widgets/forge_bottom_navigation_bar.dart';
 import '../../../../shared/widgets/forge_button.dart';
 import '../../../../shared/widgets/forge_card.dart';
 import '../../../../shared/widgets/forge_error_state.dart';
@@ -16,6 +17,24 @@ import '../providers/progression_state.dart';
 import '../widgets/achievement_card.dart';
 import '../widgets/category_progress_row.dart';
 import '../widgets/level_up_celebration.dart';
+
+/// Responsive sizing for the level ring (Mobile Polish Pass 1) — a pure
+/// function of the width actually available inside its card, so it's
+/// unit-testable without pumping the whole page. The max (180) is the
+/// ring's original, already-reasonable fixed size on any normal phone or
+/// tablet width — this is a narrow-width safety net (shrink below 180
+/// only when the available width is genuinely that tight), not a way to
+/// grow the ring bigger everywhere. 140 is a preferred floor, not a hard
+/// one: below that (not expected on any real phone once the page's own
+/// padding is accounted for), returning the raw [availableWidth]
+/// guarantees no overflow rather than clamping up past what's available.
+double responsiveLevelRingSize(double availableWidth) {
+  const preferredMin = 140.0;
+  const preferredMax = 180.0;
+  return availableWidth >= preferredMin
+      ? availableWidth.clamp(preferredMin, preferredMax)
+      : availableWidth;
+}
 
 /// The Progress tab's real content — level, XP preview, title, and category
 /// growth, plus a short "recent achievements" preview (the full grid lives
@@ -72,7 +91,12 @@ class _ProgressionContent extends ConsumerWidget {
     final inProgress = aggregate.achievements.progressUpdates;
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(tokens.spacing.space4),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        ForgeBottomNavigationBar.shellContentBottomClearance(tokens),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -94,14 +118,37 @@ class _ProgressionContent extends ConsumerWidget {
                     'Level ${profile.currentLevel}, '
                     '${(aggregate.levelProgress * 100).round()} percent to '
                     'next level',
-                child: ForgeProgressRing(
-                  progress: aggregate.levelProgress,
-                  child: ExcludeSemantics(
-                    child: Text(
-                      '${profile.currentLevel}',
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                  ),
+                // Responsive instead of ForgeProgressRing's fixed 180px
+                // default (Mobile Polish Pass 1) — LayoutBuilder reads the
+                // actual width available inside this card (already net of
+                // the page's own horizontal padding and the card's own
+                // internal padding). The max stays 180 — the ring's
+                // existing, already-reasonable size on any normal phone
+                // or tablet width — so this is a pure narrow-width safety
+                // net (shrinks below 180 only when the available width
+                // actually is that tight) rather than growing the ring
+                // bigger everywhere. 140 is a preferred floor, not a hard
+                // one: on a container narrower than that (not expected on
+                // any real phone once padding is accounted for), falling
+                // back to the raw available width guarantees no overflow
+                // rather than clamping up past it.
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final ringSize = responsiveLevelRingSize(
+                      constraints.maxWidth,
+                    );
+                    return ForgeProgressRing(
+                      progress: aggregate.levelProgress,
+                      size: ringSize,
+                      strokeWidth: ringSize / 180 * 14,
+                      child: ExcludeSemantics(
+                        child: Text(
+                          '${profile.currentLevel}',
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                      ),
+                    );
+                  },
                 ),
               ),
               SizedBox(height: tokens.spacing.space2),

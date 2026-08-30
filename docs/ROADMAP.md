@@ -706,6 +706,34 @@ Delivered via PR into `develop`, not merged by this pass. **A new
 signed APK has not been built or dispatched yet — real-device retest is
 required once one is.**
 
+**Update — beta.2 verified on real hardware; Mobile Polish Pass 1 for
+beta.3 (not yet built/tested):** build 6 (`1.0.0-beta.2+6`) was
+installed directly over beta.1 on the same real Android device — in-place
+update, signing/package continuity, startup, and a core navigation
+smoke test (Rank/Progress/Awards/Profile/Settings) all PASS, no
+blocker found (full record in
+[docs/ANDROID_BETA_DEVICE_TEST.md](ANDROID_BETA_DEVICE_TEST.md)). A
+focused mobile UI audit against that real-device result found three
+fixable issues, none blocking: all five bottom-nav shell tabs (Home/
+Rank/Progress/Awards/Profile) reserved only a uniform `space4` (11.2px)
+of bottom scroll padding with no allowance for the floating nav bar's
+own margin/shadow; `textTheme.bodySmall` was undefined and silently
+inherited Flutter's stock Material3 default instead of this app's own
+Inter-based scale; and the Progress page's level ring was a hardcoded,
+non-responsive 180px. `1.0.0-beta.3+7` ("Mobile Polish Pass 1", see
+[docs/FREE_BETA_RELEASE.md](FREE_BETA_RELEASE.md) for the full writeup)
+fixes exactly those three, via one shared
+`ForgeBottomNavigationBar.shellContentBottomClearance` helper (not five
+independent magic numbers), an explicit `bodySmall` definition, and
+width-responsive ring sizing capped at the ring's original 180px so
+normal phones/tablets render unchanged. Navigation architecture,
+product features, and information hierarchy are untouched. Two audit
+findings are deliberately deferred, not fixed, pending real-device
+confirmation: a possible Settings switch-vertical-alignment issue at
+large text-scale, and Profile's low content density (assessed as
+intentional, not a bug). **Not yet built, signed, or device-tested —
+real-device retest is required once a beta.3 signed APK exists.**
+
 ## Next
 
 Item 22 Phase B (the actual signed build, GitHub Release, and any

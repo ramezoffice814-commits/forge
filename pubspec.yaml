@@ -49,7 +49,15 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # 5 was never a working app on a real device, so this bumps the beta
 # identifier (not just the build number) to honestly mark it as a new,
 # fixed iteration rather than a patch to something that ever ran.
-version: 1.0.0-beta.2+6
+# Roadmap Item 22 (Mobile Polish Pass 1): beta.2 -> beta.3, build 6 -> 7.
+# Build 6 was verified working on a real device (in-place update over
+# beta.1, startup/core-navigation smoke test all PASS — see
+# docs/ANDROID_BETA_DEVICE_TEST.md) but the same real-device pass
+# surfaced mobile UI polish issues (bottom-nav content clearance,
+# missing bodySmall typography, non-responsive level ring — see
+# docs/FREE_BETA_RELEASE.md). This build carries those fixes; it has not
+# yet itself been built/signed/device-tested.
+version: 1.0.0-beta.3+7
 
 environment:
   sdk: ^3.12.2

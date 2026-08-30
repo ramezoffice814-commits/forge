@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/forge_tokens.dart';
+import '../../../../shared/widgets/forge_bottom_navigation_bar.dart';
 import '../../../../shared/widgets/forge_error_state.dart';
 import '../../../../shared/widgets/forge_loading_state.dart';
 import '../../../../shared/widgets/forge_scaffold.dart';
@@ -58,7 +59,12 @@ class _Grid extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     return ListView.separated(
-      padding: EdgeInsets.all(tokens.spacing.space4),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        ForgeBottomNavigationBar.shellContentBottomClearance(tokens),
+      ),
       itemCount: achievements.length,
       separatorBuilder: (_, _) => SizedBox(height: tokens.spacing.space2),
       itemBuilder: (context, index) =>

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/router/app_routes.dart';
 import '../../../core/theme/forge_tokens.dart';
+import '../../../shared/widgets/forge_bottom_navigation_bar.dart';
 import '../../../shared/widgets/forge_button.dart';
 import '../../../shared/widgets/forge_card.dart';
 import '../../../shared/widgets/forge_loading_state.dart';
@@ -36,7 +37,12 @@ class ProfilePage extends ConsumerWidget {
       ],
       body: switch (state) {
         ProgressionReady ready => SingleChildScrollView(
-          padding: EdgeInsets.all(tokens.spacing.space4),
+          padding: EdgeInsets.fromLTRB(
+            tokens.spacing.space4,
+            tokens.spacing.space4,
+            tokens.spacing.space4,
+            ForgeBottomNavigationBar.shellContentBottomClearance(tokens),
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
