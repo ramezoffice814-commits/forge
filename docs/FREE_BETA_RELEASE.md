@@ -148,21 +148,21 @@ justification yet for a first beta round.
 
 ## GitHub Release plan (Section 30) — not created
 
-**Release title** (example): `CAN Public Beta — 1.0.0-beta.2`
+**Release title** (example): `CAN Public Beta — 1.0.0-beta.3`
 
 **Assets** (once a human-signed APK exists, per
 [docs/ANDROID_BETA_SIGNING_SETUP.md](ANDROID_BETA_SIGNING_SETUP.md)):
 
-- `CAN-v1.0.0-beta.2+6.apk` — the signed release APK.
-- `CAN-v1.0.0-beta.2+6.apk.sha256` — its checksum (see below).
+- `CAN-v1.0.0-beta.3+7.apk` — the signed release APK.
+- `CAN-v1.0.0-beta.3+7.apk.sha256` — its checksum (see below).
 - Release notes (see below), as the release body.
 
 **Release body should include**:
 
 - Version and build number.
 - SHA256 checksum, and how to verify it (`certutil -hashfile
-  CAN-v1.0.0-beta.2+6.apk SHA256` on Windows, `shasum -a 256
-  CAN-v1.0.0-beta.2+6.apk` on macOS/Linux).
+  CAN-v1.0.0-beta.3+7.apk SHA256` on Windows, `shasum -a 256
+  CAN-v1.0.0-beta.3+7.apk` on macOS/Linux).
 - Installation instructions (link to
   [docs/ANDROID_BETA_DEVICE_TEST.md](ANDROID_BETA_DEVICE_TEST.md)'s
   "Install" section).
@@ -183,7 +183,7 @@ automatically as part of producing the APK, via `sha256sum` on the
 runner; the same command works locally once an APK exists:
 
 ```
-certutil -hashfile CAN-v1.0.0-beta.2+6.apk SHA256
+certutil -hashfile CAN-v1.0.0-beta.3+7.apk SHA256
 ```
 
 (Windows; `shasum -a 256 <file>` on macOS/Linux) — the resulting hash
@@ -313,7 +313,7 @@ dispatched — real-device retest is required once one is.**
 
 **DRAFT — not published.**
 
-> ## CAN Public Beta 1.0.0-beta.2
+> ## CAN Public Beta 1.0.0-beta.3
 >
 > This is an early public beta of CAN — a daily-discipline app built
 > around structured missions, progression, and fair competition.
@@ -366,6 +366,28 @@ at startup — see "Real-device signed-APK test result" below and
 was never a working app on a real device, so the beta identifier itself
 bumps (not just the build number) to honestly mark this as a new, fixed
 iteration rather than a patch to something that ever actually ran.
+
+**Update — beta.2 verified, beta.3 is a UI-polish candidate**: build 6
+(`1.0.0-beta.2+6`) was verified on the same real Android device — in-place
+update over beta.1, signing/package continuity, startup, and a core
+navigation smoke test (Rank/Progress/Awards/Profile/Settings) all PASS
+(full record in
+[docs/ANDROID_BETA_DEVICE_TEST.md](ANDROID_BETA_DEVICE_TEST.md)). That
+same real-device pass fed a mobile UI audit that found (no blocker):
+uniform, too-tight bottom-scroll padding on all five shell tabs next to
+the floating bottom nav; `textTheme.bodySmall` silently falling back to
+Flutter's stock Material3 default instead of this app's own Inter-based
+scale; and a hardcoded, non-responsive 180px level ring on the Progress
+page. `1.0.0-beta.3+7` ("Mobile Polish Pass 1") fixes exactly those
+three things — one shared `ForgeBottomNavigationBar.
+shellContentBottomClearance` helper instead of five independent magic
+numbers, an explicit `bodySmall` definition matching the existing Inter
+scale, and width-responsive ring sizing capped at the ring's original
+180px (so normal phones/tablets render unchanged) — without touching
+navigation architecture, product features, or the still-unconfirmed
+Settings switch-alignment/Profile-density items, which remain documented
+follow-ups. **Not yet built, signed, or device-tested** — a fresh
+real-device retest is required once a beta.3 signed APK exists.
 
 ## What this document does not do
 

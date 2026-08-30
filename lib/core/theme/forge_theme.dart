@@ -38,6 +38,18 @@ abstract final class ForgeTheme {
   /// tight `-0.015em` tracking, `1.12` line height — h6 additionally uppercase
   /// with `+0.08em` tracking (transform applied at the call site, Flutter
   /// [TextStyle] has no text-transform). Body copy is Inter 400, 15px, 1.55.
+  ///
+  /// `bodySmall` is the smaller body-copy variant used pervasively across
+  /// the app for muted/secondary text (unlock reasons, card captions,
+  /// notification/settings explanatory copy) — same family/weight/color
+  /// convention as [bodyMedium] (Inter 400, [ForgeColors.text] at full
+  /// opacity; callers apply `.withValues(alpha: ...)` for the muted look,
+  /// exactly like every existing `bodyMedium`/`bodySmall` call site
+  /// already does), just one step down in size. Mobile Polish Pass 1:
+  /// this role was previously left undefined here, so `ThemeData` silently
+  /// merged in Flutter's stock Material3 `bodySmall` (12px, different
+  /// line-height/letter-spacing, no relation to this app's own scale) —
+  /// every screen using `textTheme.bodySmall` was quietly off-system.
   static TextTheme _textTheme() {
     TextStyle heading(double size, {double trackingEm = -0.015}) {
       return GoogleFonts.inter(
@@ -60,6 +72,12 @@ abstract final class ForgeTheme {
         fontSize: 15,
         fontWeight: FontWeight.w400,
         height: 1.55,
+        color: ForgeColors.text,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 13,
+        fontWeight: FontWeight.w400,
+        height: 1.4,
         color: ForgeColors.text,
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/forge_tokens.dart';
+import '../../../../shared/widgets/forge_bottom_navigation_bar.dart';
 import '../../../../shared/widgets/forge_card.dart';
 import '../../../../shared/widgets/forge_error_state.dart';
 import '../../../../shared/widgets/forge_loading_state.dart';
@@ -90,7 +91,12 @@ class _MyLeagueTab extends ConsumerWidget {
     final userId = ref.watch(currentCompetitionUserIdProvider);
 
     return SingleChildScrollView(
-      padding: EdgeInsets.all(tokens.spacing.space4),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        ForgeBottomNavigationBar.shellContentBottomClearance(tokens),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -139,7 +145,12 @@ class _SeasonTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     return SingleChildScrollView(
-      padding: EdgeInsets.all(tokens.spacing.space4),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        ForgeBottomNavigationBar.shellContentBottomClearance(tokens),
+      ),
       child: SeasonProgressCard(snapshot: state.seasonProgress),
     );
   }
@@ -154,7 +165,12 @@ class _HallOfFameTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
     return SingleChildScrollView(
-      padding: EdgeInsets.all(tokens.spacing.space4),
+      padding: EdgeInsets.fromLTRB(
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        tokens.spacing.space4,
+        ForgeBottomNavigationBar.shellContentBottomClearance(tokens),
+      ),
       child: HallOfFameList(records: state.hallOfFame),
     );
   }

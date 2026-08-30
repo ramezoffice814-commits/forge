@@ -29,6 +29,40 @@ class ForgeBottomNavigationBar extends StatelessWidget {
   final int currentIndex;
   final ValueChanged<int> onTap;
 
+  /// This bar's own intrinsic content height: [_ForgeTab]'s
+  /// `Padding(EdgeInsets.fromLTRB(0, 9, 0, 7))` (16) + the always-present
+  /// active-pill placeholder (3, kept in layout by `AnimatedOpacity` even
+  /// when invisible) + the gap below it (4) + the icon (21) + the gap
+  /// below that (4) + one line of the 10px label (~14 with its default
+  /// line height). Kept as one named constant here, next to the layout
+  /// it describes, rather than re-measured/guessed at every call site.
+  static const double _contentHeight = 62;
+
+  /// Extra headroom for [ForgeShadows.lg]'s `blurRadius: 40, offset:
+  /// Offset(0, 16)` — a shadow with a downward offset still visually
+  /// bleeds upward by roughly `blurRadius - offset.dy`, which is what
+  /// let this bar read as "sliding under" the last scrolled item even
+  /// though Flutter's `Scaffold` already keeps `body` content
+  /// geometrically clear of it.
+  static const double _shadowBleedAllowance = 24;
+
+  /// The bottom padding a scrollable shell-tab page (Home/Rank/Progress/
+  /// Awards/Profile — every [StatefulShellRoute] branch root) should add
+  /// below its last item so it clears this floating bar comfortably, not
+  /// just technically. `Scaffold` already reserves exactly this bar's own
+  /// rendered height (content + its outer margin) above system safe-area
+  /// insets automatically — that part needs no help here. What it doesn't
+  /// know about is this bar's own drop shadow, which paints outside its
+  /// layout bounds; [_shadowBleedAllowance] is this method's contribution
+  /// on top of the bar's real footprint.
+  ///
+  /// Every shell-tab page should call this instead of a hand-picked
+  /// bottom-padding value, so all five stay consistent and this is the
+  /// one place to retune if this bar's own size/margin/shadow ever
+  /// changes.
+  static double shellContentBottomClearance(ForgeTokens tokens) =>
+      _contentHeight + tokens.spacing.space3 + _shadowBleedAllowance;
+
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;

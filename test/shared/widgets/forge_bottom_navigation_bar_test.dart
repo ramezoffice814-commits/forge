@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:forge/core/theme/forge_theme.dart';
+import 'package:forge/core/theme/forge_tokens.dart';
 import 'package:forge/shared/widgets/forge_bottom_navigation_bar.dart';
 
 void main() {
@@ -70,5 +71,33 @@ void main() {
     for (final opacity in opacities) {
       expect(opacity.duration, isNot(Duration.zero));
     }
+  });
+
+  group('shellContentBottomClearance (Mobile Polish Pass 1)', () {
+    final tokens = ForgeTokens.dark();
+
+    test('is meaningfully larger than the plain page padding it replaces', () {
+      final clearance = ForgeBottomNavigationBar.shellContentBottomClearance(
+        tokens,
+      );
+      // The original bug: every shell tab used the same tokens.spacing.space4
+      // (11.2) for every side, including the bottom edge next to this bar.
+      // A real fix has to be substantially bigger than that, not a token
+      // reshuffle that happens to compute back to roughly the same number.
+      expect(clearance, greaterThan(tokens.spacing.space4 * 4));
+    });
+
+    test('equals the documented content height + margin + shadow bleed', () {
+      final clearance = ForgeBottomNavigationBar.shellContentBottomClearance(
+        tokens,
+      );
+      // 62 (this bar's own intrinsic content height) + tokens.spacing.space3
+      // (the same outer bottom margin `build()` above gives this bar) + 24
+      // (ForgeShadows.lg's blur/offset bleed allowance) — see
+      // shellContentBottomClearance's own doc comment for what each term
+      // represents; this pins the formula so a future edit to any one term
+      // is a deliberate, visible change here too.
+      expect(clearance, closeTo(62 + tokens.spacing.space3 + 24, 0.001));
+    });
   });
 }

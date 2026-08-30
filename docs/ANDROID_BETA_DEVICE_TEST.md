@@ -148,7 +148,46 @@ APK's signature/package/version, they never launch it). Result:
     a hypothetical — recorded honestly rather than silently patched
     over.
 
-**Build `1.0.0-beta.2+6` contains the fix but has not yet been built,
-signed, or tested on a real device — REAL_DEVICE_RETEST_REQUIRED = YES.**
-Every checklist item above still needs to be executed fresh against
-that build once a new signed APK is dispatched and authorized.
+**SECOND REAL ANDROID DEVICE TEST PERFORMED — STARTUP ROUTING FIX
+VERIFIED ON REAL HARDWARE.** Build `1.0.0-beta.2+6` (signed workflow
+run `33276599546`) was installed on the **same** device **directly
+over** the already-installed `1.0.0-beta.1+5`, without uninstalling
+first — the in-place-update test this checklist's "Update test"
+section above exists for. Result:
+
+- **IN-PLACE ANDROID UPDATE = PASS** — Android accepted the higher
+  `versionCode` (5 → 6) as a normal update, not a fresh install.
+- **SIGNING CONTINUITY = PASS** — same certificate accepted by Android
+  across the update, as expected (both builds are signed with the same
+  human-owned `can-beta` key).
+- **PACKAGE CONTINUITY = PASS** — `com.forge.app.forge` unchanged.
+- **VERSION UPGRADE 5 → 6 = PASS**.
+- **APPLICATION STARTUP = PASS** — the `/splash` failure is gone.
+  **STARTUP_ROUTING_FIX_REAL_DEVICE_VERIFIED = YES.**
+- **CORE NAVIGATION SMOKE TEST = PASS** — the human navigated through
+  Rank, Progress, Awards, Profile, and Settings on the real device
+  without hitting the NotFoundPage or any other navigation failure.
+  Settings correctly reports `CAN Beta` / `Version 1.0.0-beta.2+6`,
+  matching `pubspec.yaml` and the built APK's own verified metadata.
+
+This confirms the `assertAuthRepositoryConfigIsSafe`/
+`assertBackendModeConfigIsSafe`/`errorBuilder` fix
+(`fix/startup-routing-release-mock-guard`, merged via
+[PR #17](https://github.com/ramezoffice814-commits/forge/pull/17))
+resolves the real-device crash, not just the guard's unit tests and the
+CI-side static APK verification.
+
+**Not yet claimed**: this is a startup + core-navigation smoke test,
+not full application QA. Deeper feature flows (mission
+accept/progress/complete, Daily Transmission, notifications, sign-up/
+sign-in against the real device's storage, offline behavior, etc.)
+have not been exercised on real hardware and remain untested beyond
+what `flutter test`'s mocked environment already covers.
+
+### Summary across both real-device tests
+
+| Build | Install | Signature | Startup | Notes |
+|---|---|---|---|---|
+| `1.0.0-beta.1+5` | PASS | PASS | **FAIL** | `No route for '/splash'` — release+mock safety guard exception during router redirect, masked by the generic `errorBuilder` message. |
+| `1.0.0-beta.2+6` | PASS (in-place update over beta.1) | PASS (continuity) | **PASS** | `/splash` regression fixed; core navigation (Rank/Progress/Awards/Profile/Settings) smoke-tested successfully. |
+| `1.0.0-beta.3+7` | not yet built | not yet built | not yet tested | **Mobile Polish Pass 1** candidate (see [docs/FREE_BETA_RELEASE.md](FREE_BETA_RELEASE.md)) — bottom-nav content clearance, `bodySmall` typography, responsive Progress ring. Delivered as a PR into `develop`, not merged, not built/signed. This row must not be marked verified until an actual signed beta.3 APK has been run through this checklist on a real device. |

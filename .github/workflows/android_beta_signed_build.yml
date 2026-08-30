@@ -195,8 +195,8 @@ jobs:
           AAPT="${{ steps.sdk_tools.outputs.aapt }}"
           APK_PATH="build/app/outputs/flutter-apk/app-release.apk"
           EXPECTED_PACKAGE="com.forge.app.forge"
-          EXPECTED_VERSION_NAME="1.0.0-beta.2"
-          EXPECTED_VERSION_CODE="6"
+          EXPECTED_VERSION_NAME="1.0.0-beta.3"
+          EXPECTED_VERSION_CODE="7"
 
           if [ -x "$AAPT" ]; then
             BADGING="$("$AAPT" dump badging "$APK_PATH")"
