@@ -731,8 +731,23 @@ product features, and information hierarchy are untouched. Two audit
 findings are deliberately deferred, not fixed, pending real-device
 confirmation: a possible Settings switch-vertical-alignment issue at
 large text-scale, and Profile's low content density (assessed as
-intentional, not a bug). **Not yet built, signed, or device-tested —
-real-device retest is required once a beta.3 signed APK exists.**
+intentional, not a bug).
+
+**Update — beta.3+7 signed, verified, and published:** the signed
+workflow ran successfully (run `33305160721`, `develop` @
+`07111a472659548ef050330edf08897c6bae9e0e`) — package `com.forge.app.forge`,
+`versionName 1.0.0-beta.3`, `versionCode 7`, certificate fingerprint
+confirmed against the human-owned `can-beta` key. At the repository
+owner's explicit request (wanting a public download link for a
+portfolio), the repository was made **public** and the signed APK was
+published as a real [GitHub
+Release](https://github.com/ramezoffice814-commits/forge/releases/tag/v1.0.0-beta.3)
+(`v1.0.0-beta.3`, checksum `8ac4ca52c39d49c6438100b55fca07a1fbf7a899943a04033b8a70627265886a`)
+— this is this project's first actual public launch action, previously
+gated behind "Human Launch Approval" throughout every earlier pass of
+this item. Real-device retest of beta.3 itself (as opposed to the
+build/signing verification above) has not yet been separately
+confirmed.
 
 ## Next
 
