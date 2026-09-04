@@ -1,11 +1,11 @@
-# Forge
+# CAN
 
 **AI-powered discipline and habit-building application** with adaptive daily
 missions, cinematic Daily Transmissions, an event-driven mission lifecycle,
 a fair progression/competition system, a social layer, and a real
 authoritative Supabase backend behind it all.
 
-Forge started as a fully offline, deterministic Flutter app — every system
+CAN started as a fully offline, deterministic Flutter app — every system
 ran against curated mock data with no backend required — and that mock-first
 default still works with zero configuration. A real backend now exists
 behind the same interfaces: Supabase/Postgres with RLS, SECURITY DEFINER
@@ -13,21 +13,22 @@ command functions, and Deno Edge Functions independently re-validate every
 mission completion, XP award, achievement unlock, and competitive score
 before any of it becomes confirmed.
 
-> **Status: active development, pre-release.** This is not yet a published
-> app. The backend is **staging-verified**, not production-verified, and
-> a production-hardening audit (Item 18) found no release-blocking
-> security issue but real signing keys, legal/privacy content, and a live
-> staging smoke test are still outstanding — see
-> [Project Status](#project-status), [Trust Boundaries](#trust-boundaries),
+> **Status: free public beta.** A signed Android build is published on
+> the [Releases page](../../releases) — install it directly, no Play
+> Store required. The backend is **staging-verified**, not
+> production-verified, and this beta intentionally runs a zero-cost
+> mock backend by default (no Supabase project required to try it) —
+> see [Project Status](#project-status), [Trust Boundaries](#trust-boundaries),
 > [docs/ROADMAP.md](docs/ROADMAP.md), and
 > [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) for exactly
-> what's implemented and what's still blocking a release today.
+> what's implemented and what's still outstanding for a full production
+> release.
 
 ---
 
 ## Overview
 
-Every day, Forge selects one mission for the user from a curated catalog
+Every day, CAN selects one mission for the user from a curated catalog
 using a deterministic rules engine, delivers it through a scripted
 "Daily Transmission" from an in-universe AI character (The Watcher), tracks
 the user's progress through an auditable, event-sourced lifecycle, and
@@ -81,7 +82,7 @@ yet). Both of those are deliberate, current-phase constraints — see
 
 ## Architecture
 
-Forge follows **Clean Architecture** on a **feature-first** folder layout:
+CAN follows **Clean Architecture** on a **feature-first** folder layout:
 every feature owns its own `domain/`, `data/`, and `presentation/` layers
 under `lib/features/<feature>/`. Cross-cutting concerns (theming, routing,
 storage, config) live under `lib/core/`; small stateless UI primitives
@@ -114,12 +115,13 @@ this project yet — see [Known Development Constraints](#known-development-cons
 
 ## Project Status
 
-Roadmap items 1–18 are complete or partially verified — see
-[docs/ROADMAP.md](docs/ROADMAP.md) for the full item-by-item history and
-[docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) for the current,
-honest release-blocker list (Item 18: production hardening found no
-release-blocking security issue, but real signing keys, legal/privacy
-content, and a live staging smoke test are still outstanding). Legend:
+Roadmap items 1–22 are complete or partially verified, including a
+signed Android beta now published on the [Releases
+page](../../releases) — see [docs/ROADMAP.md](docs/ROADMAP.md) for the
+full item-by-item history and [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md)
+for the current, honest production-release-blocker list (legal/privacy
+content still needs final review, and a full Play Store submission is
+a separate, not-yet-started track from this direct-APK beta). Legend:
 ✅ implemented · 🧩 scaffolded only (empty feature folders, not built) ·
 🔒 deferred.
 
@@ -139,7 +141,7 @@ content, and a live staging smoke test are still outstanding). Legend:
 | AI Coach | ✅ advisory-only, mock provider; no real AI provider connected |
 | Notifications (in-app inbox + OS-level local) | ✅ server-authoritative + client-owned reminder types, quiet hours, OS delivery on Android/Windows |
 | Settings | ✅ account controls, AI privacy, notification preferences, device-notification status, accessibility status |
-| Production hardening / release readiness | 🧩 audited, no P0 blocker — signing keys, legal content, and a live staging smoke test remain, see [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) |
+| Production hardening / release readiness | ✅ audited, no P0 blocker; signed and published as a public beta — final legal content review and a full Play Store submission remain, see [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) |
 | Real AI-generated content | 🔒 not started |
 | Monetization | 🔒 not started |
 | Staging / production deployment | staging deployed and verified; production 🔒 not started |
@@ -175,7 +177,7 @@ flutter pub get
 
 ## Environment Configuration
 
-Forge reads configuration at **build/run time** via `--dart-define`, not
+CAN reads configuration at **build/run time** via `--dart-define`, not
 from a `.env` file (see [`.env.example`](.env.example) for the full,
 documented list of values — that file is reference documentation only and
 is not loaded automatically).
@@ -350,8 +352,9 @@ docs/
 ## Roadmap
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for what's been completed (items
-1–18) and what's next, and [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md)
-for the current release-blocker list.
+1–22, including the signed public beta launch) and what's next, and
+[docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) for the current
+release-blocker list.
 
 ## Known Development Constraints
 
@@ -375,9 +378,10 @@ These are current, deliberate scope boundaries — not oversights:
   content yet (a real release blocker, see
   [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md)).
 - Only Android, Web, and Windows platform folders exist in this repository
-  (no iOS/macOS/Linux scaffolding yet). Android/Web release builds
-  succeed; the Android build is still debug-signed (no real signing keys
-  generated). Windows release build status is environment-dependent — see
+  (no iOS/macOS/Linux scaffolding yet). Android is real-signed and
+  published as a beta APK (see [Releases](../../releases)); Web release
+  builds succeed but aren't hosted anywhere yet. Windows release build
+  status is environment-dependent — see
   [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md).
 
 ## License
