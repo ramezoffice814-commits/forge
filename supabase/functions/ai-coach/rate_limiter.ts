@@ -13,6 +13,8 @@
 // persistent counter (e.g. a Postgres table keyed by user+task+window)
 // so the limit holds under real concurrent traffic.
 
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
+
 const WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 10;
 
@@ -33,4 +35,27 @@ export function isRateLimited(userId: string, task: string): boolean {
   existing.push(now);
   recentRequests.set(key, existing);
   return false;
+}
+
+// Roadmap Item 14C: the global counterpart to the per-user limiter
+// above — see supabase/migrations/20260827090000_ai_coach_global_rate_
+// limit.sql for why a real (non-mock) provider needs a persistent,
+// cross-instance cap on top of the per-user one. Only called by
+// index.ts when a real provider is selected; the mock-only default path
+// never touches Postgres for this.
+//
+// Fails *open* (returns false, i.e. "not exceeded") on any RPC/network
+// error — a transient Postgres hiccup should not silently degrade every
+// user's AI Coach to the mock fallback. The per-user limiter above and
+// the provider's own error handling remain the backstop for that case.
+export async function isGlobalDailyCapExceeded(
+  admin: SupabaseClient,
+  dailyCap: number,
+): Promise<boolean> {
+  const { data, error } = await admin.rpc(
+    "forge_check_and_increment_ai_coach_global_usage",
+    { p_daily_cap: dailyCap },
+  );
+  if (error) return false;
+  return data === false;
 }

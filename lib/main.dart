@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
 import 'app.dart';
+import 'core/config/ai_coach_mode.dart';
 import 'core/config/app_config.dart';
 import 'core/error/crash_handler.dart';
 
@@ -30,6 +31,22 @@ Future<void> main() async {
           'provided via --dart-define.',
         );
       }
+      await supa.Supabase.initialize(
+        url: AppConfig.supabaseUrl,
+        publishableKey: AppConfig.supabaseAnonKey,
+      );
+    } else if (resolveAiCoachMode(
+          aiCoachLiveFlag: AppConfig.aiCoachLiveFlag,
+          isSupabaseConfigured: AppConfig.isSupabaseConfigured,
+        ) ==
+        AiCoachMode.live) {
+      // AI Coach alone reaching a real Supabase project while the rest
+      // of the backend stays mock (see ai_coach_mode.dart) — mutually
+      // exclusive with the block above so Supabase.initialize() is
+      // never called twice. Unlike the live-backend branch, no loud
+      // failure here: resolveAiCoachMode already only returns `live`
+      // when Supabase is actually configured, and going live is an
+      // opt-in, low-stakes request for this feature specifically.
       await supa.Supabase.initialize(
         url: AppConfig.supabaseUrl,
         publishableKey: AppConfig.supabaseAnonKey,

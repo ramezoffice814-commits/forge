@@ -143,6 +143,38 @@ Deno.test("observability log for a failure carries a stable error code, not a ra
   assertExists(parsed.durationMs);
 });
 
+Deno.test("a misconfigured real-provider deploy (AI_PROVIDER set, no SUPABASE_URL/cap) still returns a well-formed 200 and keeps the log's key set unchanged", async () => {
+  const previous = Deno.env.get("AI_PROVIDER");
+  Deno.env.set("AI_PROVIDER", "gemini");
+  try {
+    const { response, logs } = await captureConsoleLog(() =>
+      handleRequest(
+        postRequest(
+          { task: "coachChat", requestId: "obs-capped" },
+          { Authorization: "Bearer x" },
+        ),
+        fakeAuthOk(),
+      )
+    );
+    assertEquals(response.status, 200);
+    const data = await response.json();
+    assertEquals(typeof data.message, "string");
+    assertEquals(data.message.length > 0, true);
+
+    assertEquals(logs.length, 1);
+    const parsed = JSON.parse(logs[0]);
+    assertEquals(parsed.success, true);
+    assertEquals(parsed.resultCode, "generated_capped_fallback");
+    assertEquals(
+      Object.keys(parsed).sort(),
+      ["commandId", "durationMs", "event", "function", "resultCode", "success"].sort(),
+    );
+  } finally {
+    if (previous === undefined) Deno.env.delete("AI_PROVIDER");
+    else Deno.env.set("AI_PROVIDER", previous);
+  }
+});
+
 Deno.test("CORS preflight is handled before authentication ever runs", async () => {
   const response = await handleRequest(
     new Request("https://example.test/functions/v1/ai-coach", { method: "OPTIONS" }),

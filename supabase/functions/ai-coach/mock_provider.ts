@@ -8,12 +8,7 @@
 
 import { AiCoachContext } from "./context.ts";
 import { PromptTemplate } from "./prompt_templates.ts";
-
-export interface ProviderResponse {
-  message: string;
-  reasoningSummary?: string;
-  suggestedActions?: string[];
-}
+import { Provider, ProviderResponse } from "./provider.ts";
 
 function toneOpener(tone: string): string {
   switch (tone) {
@@ -71,5 +66,18 @@ export function generateMockResponse(
           ? `${opener} on "${context.userMessage}" — ${context.consistencySummary}, so trust the pace you're at.`
           : `${opener} what's on your mind today?`,
       };
+  }
+}
+
+/** Thin `Provider` wrapper around `generateMockResponse` — kept as a
+ * separate function above (not folded into this class) so
+ * `mock_provider_test.ts`'s existing direct calls need no change. */
+export class MockProvider implements Provider {
+  generate(
+    task: string,
+    context: AiCoachContext,
+    template: PromptTemplate,
+  ): Promise<ProviderResponse> {
+    return Promise.resolve(generateMockResponse(task, context, template));
   }
 }

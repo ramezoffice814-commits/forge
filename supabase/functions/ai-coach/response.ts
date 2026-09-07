@@ -6,7 +6,7 @@
 // this check exists here specifically so that wiring a *real* provider
 // later inherits it for free rather than needing it added at that point.
 
-import { ProviderResponse } from "./mock_provider.ts";
+import { ProviderResponse } from "./provider.ts";
 
 const MAX_MESSAGE_LENGTH = 2000;
 
