@@ -18,10 +18,17 @@ import { AiCoachContext } from "./context.ts";
 import { PromptTemplate } from "./prompt_templates.ts";
 import { Provider, ProviderResponse } from "./provider.ts";
 
-// Free-tier flash model as of this writing — confirm against
-// https://ai.google.dev/gemini-api/docs/models at deploy time, since
-// free-tier model availability/naming shifts.
-const DEFAULT_MODEL = "gemini-1.5-flash";
+// Free-tier flash-lite model — re-confirmed against
+// https://ai.google.dev/gemini-api/docs/models and .../pricing
+// immediately before the first forge-staging deploy (2026-09-07): the
+// 1.5 series originally targeted here no longer exists at all — the
+// lineup moved to a 3.x generation. "Flash-Lite" variants are marketed
+// specifically as the cost/high-throughput-optimized tier, which is the
+// right fit for this app's short coaching messages and correlates with
+// the most generous free-tier daily quota in practice — re-verify this
+// choice again before ever raising AI_COACH_DAILY_CAP materially, since
+// free-tier model availability/naming has already shifted once.
+const DEFAULT_MODEL = "gemini-3.5-flash-lite";
 
 // Mirrors mock_provider.ts's own per-task suggested actions exactly —
 // these are UI affordances tied to `task`, not something a text
