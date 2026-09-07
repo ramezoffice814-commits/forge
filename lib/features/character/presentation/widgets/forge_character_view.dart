@@ -4,11 +4,13 @@ import '../../../../core/theme/forge_tokens.dart';
 import '../../domain/entities/character_profile.dart';
 import '../../domain/entities/character_state.dart';
 
-/// Original, abstract presentation of a Forge character — dark silhouette,
-/// purple rim light, restrained scan-lines, soft ambient glow. Built from
-/// plain Flutter shapes/gradients only (no third-party or copyrighted
-/// artwork); a real Rive file replaces the painters here in a later
-/// roadmap item without this widget's contract changing.
+/// A hooded silhouette with a real purple rim-light stroke and four
+/// mood-driven pose variants (idle/speaking/proud/concerned) — dark
+/// figure, restrained scan-lines, soft ambient glow. Still built entirely
+/// from plain Flutter shapes/gradients (no third-party or copyrighted
+/// artwork, no generated image assets — a deliberate zero-cost choice,
+/// Mobile Polish Pass 2); a real Rive file or illustrated art remains a
+/// possible future upgrade without this widget's contract changing.
 ///
 /// Every transition is an *implicit* animation (`Animated…` widgets) rather
 /// than a manually driven, continuously repeating `AnimationController` —
@@ -75,6 +77,23 @@ class ForgeCharacterView extends StatelessWidget {
     _ => 'TRANSMISSION',
   };
 
+  /// Collapses the 13-value [CharacterState] machine down to 4 poses —
+  /// same idea `_glowAlpha`/`_scale` above already apply, just for the
+  /// silhouette's own posture/rim-light treatment. `hidden`/
+  /// `disappearing`/`unavailable` need no dedicated pose: they already
+  /// resolve to near-zero `_silhouetteAlpha`, so whichever pose was
+  /// last showing simply fades out — `idle` is a safe, neutral base for
+  /// them.
+  _CharacterMood get _mood => switch (state) {
+    CharacterState.speaking ||
+    CharacterState.thinking => _CharacterMood.speaking,
+    CharacterState.missionAccepted ||
+    CharacterState.proud ||
+    CharacterState.completed => _CharacterMood.proud,
+    CharacterState.concerned => _CharacterMood.concerned,
+    _ => _CharacterMood.idle,
+  };
+
   @override
   Widget build(BuildContext context) {
     final tokens = Theme.of(context).extension<ForgeTokens>()!;
@@ -130,7 +149,21 @@ class ForgeCharacterView extends StatelessWidget {
                   child: AnimatedOpacity(
                     duration: duration,
                     opacity: _silhouetteAlpha,
-                    child: _Silhouette(color: tokens.accentRamp.c700),
+                    child: AnimatedSwitcher(
+                      duration: duration,
+                      // A plain cross-fade between two _Silhouette
+                      // instances — the mood change itself (posture,
+                      // rim-light) is what's worth transitioning, not a
+                      // slide/scale on top of it.
+                      transitionBuilder: (child, animation) =>
+                          FadeTransition(opacity: animation, child: child),
+                      child: _Silhouette(
+                        key: ValueKey(_mood),
+                        color: tokens.accentRamp.c700,
+                        rimLightColor: tokens.accent,
+                        mood: _mood,
+                      ),
+                    ),
                   ),
                 ),
                 Positioned(
@@ -216,55 +249,199 @@ class _GlowCircle extends StatelessWidget {
   }
 }
 
-/// A soft circle + rounded-trapezoid "shoulders" silhouette — entirely
-/// geometric, not representing any specific real person or character.
+/// Four poses the hooded silhouette can take, driven by
+/// [ForgeCharacterView._mood] — a code-only (zero-cost, Mobile Polish
+/// Pass 2) stand-in for real illustrated mood variants: subtle posture
+/// changes plus a rim-light intensity shift, not a different picture.
+enum _CharacterMood { idle, speaking, proud, concerned }
+
+class _MoodPose {
+  const _MoodPose({
+    required this.headTiltRadians,
+    required this.verticalLift,
+    required this.shoulderWidthScale,
+    required this.rimLightOpacity,
+  });
+
+  /// Positive tilts the head/shoulders slightly up (proud), negative
+  /// slightly down (concerned) — applied to the whole figure as one
+  /// canvas rotation, not separate head/shoulder transforms, so the
+  /// silhouette always reads as one connected figure.
+  final double headTiltRadians;
+
+  /// Logical pixels; negative lifts the figure (proud), positive settles
+  /// it (concerned).
+  final double verticalLift;
+  final double shoulderWidthScale;
+  final double rimLightOpacity;
+}
+
+const Map<_CharacterMood, _MoodPose> _moodPoses = {
+  _CharacterMood.idle: _MoodPose(
+    headTiltRadians: 0,
+    verticalLift: 0,
+    shoulderWidthScale: 1,
+    rimLightOpacity: 0.5,
+  ),
+  _CharacterMood.speaking: _MoodPose(
+    headTiltRadians: 0,
+    verticalLift: 0,
+    shoulderWidthScale: 1,
+    rimLightOpacity: 0.78,
+  ),
+  _CharacterMood.proud: _MoodPose(
+    headTiltRadians: 0.05,
+    verticalLift: -4,
+    shoulderWidthScale: 1.08,
+    rimLightOpacity: 0.95,
+  ),
+  _CharacterMood.concerned: _MoodPose(
+    headTiltRadians: -0.06,
+    verticalLift: 3,
+    shoulderWidthScale: 0.92,
+    rimLightOpacity: 0.3,
+  ),
+};
+
+/// A hooded figure — peaked hood, not a plain circle — plus
+/// rounded-trapezoid shoulders, entirely geometric and not representing
+/// any specific real person or character. [rimLightColor] is stroked
+/// along one edge only (a linear-gradient-shaded stroke, bright on the
+/// right fading to nothing on the left) so it reads as a light source,
+/// matching [CharacterProfile.accessibilityDescription]'s "soft purple
+/// rim light," not just a flat-colored outline.
 class _Silhouette extends StatelessWidget {
-  const _Silhouette({required this.color});
+  const _Silhouette({
+    super.key,
+    required this.color,
+    required this.rimLightColor,
+    required this.mood,
+  });
 
   final Color color;
+  final Color rimLightColor;
+  final _CharacterMood mood;
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
       size: const Size(120, 150),
-      painter: _SilhouettePainter(color),
+      painter: _SilhouettePainter(color, rimLightColor, _moodPoses[mood]!),
     );
   }
 }
 
 class _SilhouettePainter extends CustomPainter {
-  _SilhouettePainter(this.color);
+  _SilhouettePainter(this.color, this.rimLightColor, this.pose);
 
   final Color color;
+  final Color rimLightColor;
+  final _MoodPose pose;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    final headCenter = Offset(size.width / 2, size.height * 0.28);
-    canvas.drawCircle(headCenter, size.width * 0.22, paint);
+    final center = Offset(size.width / 2, size.height / 2);
 
-    final shoulders = Path()
-      ..moveTo(size.width * 0.5, size.height * 0.42)
+    canvas.save();
+    canvas.translate(center.dx, center.dy + pose.verticalLift);
+    canvas.rotate(pose.headTiltRadians);
+    canvas.translate(-center.dx, -center.dy);
+
+    final fill = Paint()..color = color;
+    final rim = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.5
+      ..shader = LinearGradient(
+        begin: Alignment.centerRight,
+        end: Alignment.centerLeft,
+        colors: [
+          rimLightColor.withValues(alpha: pose.rimLightOpacity),
+          rimLightColor.withValues(alpha: 0),
+        ],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final headCenter = Offset(size.width / 2, size.height * 0.28);
+    final headRadius = size.width * 0.22;
+    final hood = Path()
+      ..moveTo(headCenter.dx, headCenter.dy - headRadius * 1.15)
       ..quadraticBezierTo(
-        size.width * 0.05,
+        headCenter.dx - headRadius * 1.05,
+        headCenter.dy - headRadius * 0.6,
+        headCenter.dx - headRadius,
+        headCenter.dy + headRadius * 0.15,
+      )
+      ..quadraticBezierTo(
+        headCenter.dx - headRadius * 0.9,
+        headCenter.dy + headRadius * 0.95,
+        headCenter.dx,
+        headCenter.dy + headRadius * 1.05,
+      )
+      ..quadraticBezierTo(
+        headCenter.dx + headRadius * 0.9,
+        headCenter.dy + headRadius * 0.95,
+        headCenter.dx + headRadius,
+        headCenter.dy + headRadius * 0.15,
+      )
+      ..quadraticBezierTo(
+        headCenter.dx + headRadius * 1.05,
+        headCenter.dy - headRadius * 0.6,
+        headCenter.dx,
+        headCenter.dy - headRadius * 1.15,
+      )
+      ..close();
+    canvas.drawPath(hood, fill);
+    canvas.drawPath(hood, rim);
+
+    final shoulderHalfWidth = size.width * 0.48 * pose.shoulderWidthScale;
+    final shoulderCenterX = size.width * 0.5;
+    final shoulders = Path()
+      ..moveTo(shoulderCenterX, size.height * 0.42)
+      ..quadraticBezierTo(
+        shoulderCenterX - shoulderHalfWidth * 0.94,
         size.height * 0.55,
-        size.width * 0.02,
+        shoulderCenterX - shoulderHalfWidth,
         size.height,
       )
-      ..lineTo(size.width * 0.98, size.height)
+      ..lineTo(shoulderCenterX + shoulderHalfWidth, size.height)
       ..quadraticBezierTo(
-        size.width * 0.95,
+        shoulderCenterX + shoulderHalfWidth * 0.94,
         size.height * 0.55,
-        size.width * 0.5,
+        shoulderCenterX,
         size.height * 0.42,
       )
       ..close();
-    canvas.drawPath(shoulders, paint);
+    canvas.drawPath(shoulders, fill);
+    canvas.drawPath(shoulders, rim);
+
+    // Speaking's one extra detail: a small glow bar where a voice would
+    // be — static, not pulsing (the "no continuous ticker" rule this
+    // file already follows; AnimatedSwitcher's cross-fade is what makes
+    // it appear/disappear).
+    if (pose == _moodPoses[_CharacterMood.speaking]) {
+      final voiceGlow = Paint()
+        ..color = rimLightColor.withValues(alpha: 0.55)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+            center: Offset(headCenter.dx, headCenter.dy + headRadius * 0.55),
+            width: headRadius * 0.5,
+            height: 3,
+          ),
+          const Radius.circular(2),
+        ),
+        voiceGlow,
+      );
+    }
+
+    canvas.restore();
   }
 
   @override
   bool shouldRepaint(covariant _SilhouettePainter oldDelegate) =>
-      oldDelegate.color != color;
+      oldDelegate.color != color ||
+      oldDelegate.rimLightColor != rimLightColor ||
+      oldDelegate.pose != pose;
 }
 
 class _ScanLines extends StatelessWidget {

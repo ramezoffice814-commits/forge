@@ -193,6 +193,86 @@ warm instances — must become a persistent, cross-instance counter before
 any real, paid provider is connected. Not a blocker while the only
 provider is the free mock.
 
+### 14C — Real, Zero-Cost AI Provider + Watcher Visual Identity
+Addresses both remaining gaps 14B's own report flagged: a real AI
+provider, and (from the first real-device UI audit) the Watcher's
+placeholder silhouette. Zero-cost throughout, confirmed with the human
+owner before any credit-spending tool was used — see "Human input"
+below.
+
+**Backend** (`supabase/functions/ai-coach/`): extracted a `Provider`
+interface (`provider.ts`) both `mock_provider.ts` and the new
+`gemini_provider.ts` implement — a plain `fetch` call to Gemini's free
+tier, no SDK dependency. `index.ts` selects via `AI_PROVIDER` (an Edge
+Function secret, default `mock` — an unconfigured deploy stays inert).
+14B's own report flagged the in-memory rate limiter as insufficient
+before any real provider connects; this adds the persistent counter it
+called for: a new migration (`ai_coach_daily_usage` table +
+`forge_check_and_increment_ai_coach_global_usage`, server-only, same
+lockdown convention as every other `forge_*` function) enforces a
+global daily cap across every user, protecting the shared free-tier
+quota. Any misconfiguration, a reached cap, or a provider error all
+degrade to the existing mock response (never an error to the user) —
+verified via 9 new Deno tests (`gemini_provider_test.ts`,
+`rate_limiter_test.ts`/`index_test.ts` additions) plus a new pgTAP-style
+test (`supabase/tests/017_ai_coach_global_rate_limit.sql`) for the
+migration's increment/cap/rollback behavior and its access boundary.
+
+**Client**: AI Coach going live is decoupled from the overall backend
+mode — a new `AiCoachMode` (`lib/core/config/ai_coach_mode.dart`),
+gated by its own `AI_COACH_LIVE` dart-define, independent of
+`BackendMode`/`APP_ENV`. The public beta always runs `BackendMode.mock`
+(zero-cost, no Supabase project required to install); this lets AI
+Coach alone reach a real Supabase project while missions/XP/competition/
+social all stay exactly on the mock backend, untouched. `main.dart`
+gained one new, mutually-exclusive `Supabase.initialize()` branch for
+this case; `aiCoachClientProvider` now keys off `aiCoachModeProvider`
+instead of `backendModeProvider`. No provider credential is structurally
+reachable from the Flutter app or any `--dart-define` — the Gemini key
+lives only as an Edge Function secret, same trust boundary as every
+other Forge command.
+
+**Watcher visual identity**: `ForgeCharacterView`'s `_SilhouettePainter`
+was a plain circle + trapezoid with no rim-light effect at all. Real
+illustrated/generated art was considered and explicitly declined by the
+human owner once the available image-generation tool turned out to cost
+real credits, not to be free — see "Human input" below. Replaced instead
+with a genuinely zero-cost, code-only enhancement: a hooded silhouette
+(peaked hood path, not a bare circle) with a real purple rim-light
+stroke (a one-sided linear-gradient-shaded stroke, matching
+`CharacterProfile.accessibilityDescription`'s "soft purple rim light"
+literally for the first time), and four mood-driven pose variants
+(idle/speaking/proud/concerned — collapsed from the 13-value
+`CharacterState` machine the same way `_glowAlpha`/`_scale` already do)
+driving posture (head tilt, vertical lift, shoulder width) and rim-light
+intensity, cross-faded via `AnimatedSwitcher`. Daily Transmission golden
+baselines regenerated for the intentional visual change; all other
+golden suites (dashboard/competition/progression) confirmed untouched.
+
+**Human input required and given, honestly recorded**: (1) provider —
+Google Gemini free tier, confirmed. (2) Watcher art — an AI
+image-generation tool was available but preflighted as costing real
+account credits (0.15-1.25 credits/image against an 8-credit free-plan
+balance), not actually free; presented to the human owner rather than
+spent without asking, who chose the zero-cost code-only silhouette
+enhancement above instead of spending any credits. (3) rollout — built
+and tested against `forge-staging` only; `AI_COACH_LIVE`/live Gemini
+wiring was **not** added to the signed public-beta build workflow in
+this pass, and no new signed APK was built — both remain a separate,
+later, explicitly-authorized step once the human owner verifies the
+live path themselves.
+
+**Classification: COMPLETE for `forge-staging` verification readiness,
+NOT YET enabled for the public beta.** `flutter analyze`/`flutter test`
+(1044 passed) and `deno test` (61 passed) both green; SQL migration
+test not runnable in this environment (no local Postgres/Supabase
+CLI — the same standing gap reported since Items 18-21), pending a real
+`forge-staging` deploy + manual verification (dispatch the migration,
+set `AI_PROVIDER=gemini`/`GEMINI_API_KEY`/`AI_COACH_DAILY_CAP` as Edge
+Function secrets, confirm a real model-generated response and correct
+cap/fallback behavior) before any decision to enable this for the
+public beta.
+
 ### 15 — Notifications, Retention & Daily Operating Loop
 A Forge-native notification domain and in-app inbox, built on the
 existing client/server trust boundary (`lib/core/security/

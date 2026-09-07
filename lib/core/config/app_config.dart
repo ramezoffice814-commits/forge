@@ -79,6 +79,17 @@ abstract final class AppConfig {
     defaultValue: false,
   );
 
+  /// Opts AI Coach alone into a real provider, independent of
+  /// [isLive]/[environment] — see `lib/core/config/ai_coach_mode.dart`'s
+  /// `resolveAiCoachMode` for why this is a separate axis rather than
+  /// reusing [isLive]. Same `bool.fromEnvironment` idiom as
+  /// [isPublicBetaBuild]; defaults to `false` so an unconfigured build
+  /// never silently reaches a real Supabase project for this either.
+  static const bool aiCoachLiveFlag = bool.fromEnvironment(
+    'AI_COACH_LIVE',
+    defaultValue: false,
+  );
+
   /// `SUPABASE_TARGET` is required, not just `SUPABASE_URL`/
   /// `SUPABASE_ANON_KEY` — a live build with credentials but no named
   /// target is exactly the "which environment is this actually pointed

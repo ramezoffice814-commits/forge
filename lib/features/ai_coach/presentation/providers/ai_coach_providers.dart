@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supa;
 
-import '../../../../core/backend/backend_mode.dart';
-import '../../../../core/backend/backend_providers.dart';
 import '../../../../core/backend/supabase_edge_functions_client.dart';
+import '../../../../core/config/ai_coach_mode.dart';
+import '../../../../core/config/app_config.dart';
 import '../../../auth/presentation/auth_state.dart';
 import '../../../auth/presentation/auth_state_notifier.dart';
 import '../../data/ai_coach_cache_store.dart';
@@ -86,16 +86,23 @@ final aiPersonalizationProfileProvider =
       return const AiPersonalizationProfile();
     });
 
-/// Mock in mock backend mode (spec section 3: "mock mode must remain
-/// fully usable") and in live/staging mode alike *until* a real AI
-/// provider is actually deployed to the `ai-coach` Edge Function — see
-/// the Item 14 final report's provider-selection section for why no
-/// production provider is wired yet. Swapping this to
-/// `SupabaseAiCoachClient` end-to-end for a real provider is then a
-/// one-line change here, not a rewrite.
+/// Roadmap Item 14C: keyed off [aiCoachModeProvider], not
+/// `backendModeProvider` — AI Coach can go live independently of the
+/// rest of the backend (see `ai_coach_mode.dart`'s own doc comment for
+/// why). A build with the overall backend still mock but
+/// `AI_COACH_LIVE=true` + Supabase configured reaches the real
+/// `ai-coach` Edge Function here while every other feature stays on
+/// [MockAiCoachClient]'s mock-backend siblings untouched.
+final aiCoachModeProvider = Provider<AiCoachMode>((ref) {
+  return resolveAiCoachMode(
+    aiCoachLiveFlag: AppConfig.aiCoachLiveFlag,
+    isSupabaseConfigured: AppConfig.isSupabaseConfigured,
+  );
+});
+
 final aiCoachClientProvider = Provider<AiCoachClient>((ref) {
-  final mode = ref.watch(backendModeProvider);
-  if (mode == BackendMode.mock) {
+  final mode = ref.watch(aiCoachModeProvider);
+  if (mode == AiCoachMode.mock) {
     return const MockAiCoachClient();
   }
   return SupabaseAiCoachClient(
